@@ -1,10 +1,10 @@
-"""Stage A: Raw CSV ingestion -> Iceberg table in staging zone.
+"""Stage A: Nạp CSV thô → Iceberg table trong staging zone.
 
-Performs:
-- Schema validation
-- Data type casting
-- Deduplication
-- Write to Iceberg format
+Thực hiện:
+- Kiểm tra schema
+- Ép kiểu dữ liệu
+- Loại bỏ bản ghi trùng lặp
+- Ghi ra định dạng Iceberg
 """
 import sys
 from awsglue.transforms import *

@@ -1,35 +1,35 @@
 # Infrastructure
 
-## What is this?
+## Đây là gì?
 
-Thu muc chua toan bo Infrastructure as Code (IaC) cua data platform. Moi thanh phan AWS (S3, Glue, Lambda, Step Functions, ...) deu duoc dinh nghia bang code o day, khong co gi duoc tao thu cong qua AWS Console.
+Thư mục chứa toàn bộ Infrastructure as Code (IaC) của data platform. Mọi thành phần AWS (S3, Glue, Lambda, Step Functions, ...) đều được định nghĩa bằng code ở đây, không có gì được tạo thủ công qua AWS Console.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- **Reproducibility**: Deploy cung mot platform vao dev/staging/prod chi bang 1 lenh, dam bao cac moi truong giong nhau
-- **Version control**: Moi thay doi infrastructure deu duoc track trong git, co the rollback bat cu luc nao
-- **Review process**: Thay doi phai qua code review truoc khi deploy, tranh loi do 1 nguoi tu y sua
-- **Self-documenting**: Doc code la biet platform gom nhung gi, khong can doc tai lieu rieng
+- **Reproducibility**: Deploy cùng một platform vào dev/staging/prod chỉ bằng 1 lệnh, đảm bảo các môi trường giống nhau
+- **Version control**: Mọi thay đổi infrastructure đều được track trong git, có thể rollback bất cứ lúc nào
+- **Review process**: Thay đổi phải qua code review trước khi deploy, tránh lỗi do 1 người tự ý sửa
+- **Self-documenting**: Đọc code là biết platform gồm những gì, không cần đọc tài liệu riêng
 
-## How does it work?
+## Hoạt động như thế nào?
 
-Su dung AWS CDK (Python) de dinh nghia resources. CDK compile Python code thanh CloudFormation templates, roi CloudFormation deploy len AWS.
+Sử dụng AWS CDK (Python) để định nghĩa resources. CDK compile Python code thành CloudFormation templates, rồi CloudFormation deploy lên AWS.
 
 ```
 Python CDK Code --> CloudFormation Templates --> AWS Resources
-(developer viet)    (CDK tu generate)           (CloudFormation deploy)
+(developer viết)    (CDK tự generate)           (CloudFormation deploy)
 ```
 
-## Structure
+## Cấu trúc
 
 ```
 infrastructure/
 ├── cdk/
-│   ├── app.py              # Entry point - khoi tao tat ca stacks
+│   ├── app.py              # Entry point - khởi tạo tất cả stacks
 │   ├── cdk.json            # CDK config
-│   ├── lambda/             # Lambda function code (deploy cung CDK)
-│   └── stacks/             # Moi stack = 1 nhom resources lien quan
+│   ├── lambda/             # Lambda function code (deploy cùng CDK)
+│   └── stacks/             # Mỗi stack = 1 nhóm resources liên quan
 └── configs/
-    ├── dev.yaml            # Config rieng cho dev environment
-    └── prod.yaml           # Config rieng cho prod environment
+    ├── dev.yaml            # Config riêng cho dev environment
+    └── prod.yaml           # Config riêng cho prod environment
 ```

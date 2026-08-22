@@ -1,4 +1,4 @@
-"""Unit tests for sample-domain pipeline logic."""
+"""Unit tests cho logic pipeline của sample-domain."""
 import pytest
 import sys
 from pathlib import Path

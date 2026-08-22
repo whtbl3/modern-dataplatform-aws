@@ -1,12 +1,12 @@
 """
-Pipeline Trigger Lambda - Khoi dong ETL pipeline khi co file moi trong S3.
+Pipeline Trigger Lambda - Khởi động ETL pipeline khi có file mới trong S3.
 
-Duoc goi boi EventBridge khi S3 raw bucket nhan file .csv moi.
-Chi xu ly file CSV, bo qua cac dinh dang khac (JSON metadata, Parquet, ...).
-Moi file CSV trigger 1 Step Functions execution rieng biet.
+Được gọi bởi EventBridge khi S3 raw bucket nhận file .csv mới.
+Chỉ xử lý file CSV, bỏ qua các định dạng khác (JSON metadata, Parquet, ...).
+Mỗi file CSV trigger 1 Step Functions execution riêng biệt.
 
-Input: EventBridge event chua thong tin bucket va object key
-Output: Start Step Functions execution voi context (bucket, key, domain name)
+Input: EventBridge event chứa thông tin bucket và object key
+Output: Start Step Functions execution với context (bucket, key, domain name)
 """
 import json
 import os
@@ -17,7 +17,7 @@ STATE_MACHINE_ARN = os.environ["STATE_MACHINE_ARN"]
 
 
 def handler(event, context):
-    """Xu ly S3 event records, start pipeline cho moi file CSV."""
+    """Xử lý S3 event records, start pipeline cho mỗi file CSV."""
     for record in event["Records"]:
         bucket = record["s3"]["bucket"]["name"]
         key = record["s3"]["object"]["key"]

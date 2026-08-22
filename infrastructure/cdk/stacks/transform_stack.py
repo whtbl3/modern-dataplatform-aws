@@ -1,14 +1,14 @@
 """
-Transform Stack - Glue ETL jobs xu ly du lieu.
+Transform Stack - Glue ETL jobs xử lý dữ liệu.
 
-Tao 2 Glue jobs theo SDLF pattern (Serverless Data Lake Framework):
-- Stage A: Light transform - doc raw data, validate schema, dedup, ghi Iceberg
-- Stage B: Heavy transform - join datasets, ap dung business logic, aggregate
+Tạo 2 Glue jobs theo SDLF pattern (Serverless Data Lake Framework):
+- Stage A: Light transform - đọc raw data, validate schema, dedup, ghi Iceberg
+- Stage B: Heavy transform - join datasets, áp dụng business logic, aggregate
 
-Con tao 1 Crawler chay hang ngay de cap nhat Glue Catalog voi tables/partitions moi.
+Còn tạo 1 Crawler chạy hàng ngày để cập nhật Glue Catalog với tables/partitions mới.
 
-Glue jobs doc script tu S3 scripts bucket (deploy boi CI/CD pipeline),
-nen khi data engineer update code chi can commit, khong can sua infrastructure.
+Glue jobs đọc script từ S3 scripts bucket (deploy bởi CI/CD pipeline),
+nên khi data engineer update code chỉ cần commit, không cần sửa infrastructure.
 """
 from aws_cdk import (
     Stack,
@@ -18,10 +18,10 @@ from constructs import Construct
 
 
 class TransformStack(Stack):
-    """Tao Glue ETL jobs (Stage A + B) va Crawler cho curated zone."""
+    """Tạo Glue ETL jobs (Stage A + B) và Crawler cho curated zone."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, storage_stack, **kwargs):
-        """Khoi tao Glue jobs voi Iceberg support va CloudWatch logging."""
+        """Khởi tạo Glue jobs với Iceberg support và CloudWatch logging."""
         super().__init__(scope, construct_id, **kwargs)
 
         self.stage_a_job = glue.CfnJob(

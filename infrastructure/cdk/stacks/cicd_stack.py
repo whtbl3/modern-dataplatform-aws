@@ -1,39 +1,39 @@
 """
 CICD Stack - Self-mutating CDK Pipeline theo AWS Best Practices.
 
-Implement theo AWS Well-Architected Data Analytics Lens va CDK Pipelines pattern:
+Implement theo AWS Well-Architected Data Analytics Lens và CDK Pipelines pattern:
 
-1. SELF-MUTATING: Pipeline tu update chinh no khi code thay doi (khong can
-   deploy thu cong lan 2). CDK Pipelines construct tu dong them UpdatePipeline stage.
+1. SELF-MUTATING: Pipeline tự update chính nó khi code thay đổi (không cần
+   deploy thủ công lần 2). CDK Pipelines construct tự động thêm UpdatePipeline stage.
 
-2. MULTI-ENVIRONMENT PROMOTION: Mot pipeline duy nhat promote artifacts qua cac stages:
-   Source -> Build -> UpdatePipeline -> Dev -> [Tests] -> Staging -> [Approval] -> Prod
-   Moi environment la 1 "wave" trong pipeline, deploy parallel hoac sequential.
+2. MULTI-ENVIRONMENT PROMOTION: Một pipeline duy nhất promote artifacts qua các stages:
+   Source → Build → UpdatePipeline → Dev → [Tests] → Staging → [Approval] → Prod
+   Mỗi environment là 1 "wave" trong pipeline, deploy parallel hoặc sequential.
 
-3. IMMUTABLE ARTIFACTS: CDK synth 1 lan, deploy cung artifact vao moi env.
-   Khong rebuild cho moi env (tranh "works on dev but not prod").
+3. IMMUTABLE ARTIFACTS: CDK synth 1 lần, deploy cùng artifact vào mọi env.
+   Không rebuild cho mỗi env (tránh "works on dev but not prod").
 
-4. TESTING GATES: Moi stage co pre/post steps:
+4. TESTING GATES: Mỗi stage có pre/post steps:
    - Pre: Unit tests, lint, security scan
    - Post: Integration tests, data quality validation, smoke tests
 
-5. SCOPED IAM: Permissions chi cho resources can thiet, khong dung "*".
+5. SCOPED IAM: Permissions chỉ cho resources cần thiết, không dùng "*".
 
 6. OBSERVABILITY: SNS notifications cho pipeline failures, CloudWatch metrics.
 
-7. ROLLBACK: CloudFormation tu dong rollback khi deploy fail.
-   Transform code rollback bang cach revert commit (CI/CD re-deploy version cu).
+7. ROLLBACK: CloudFormation tự động rollback khi deploy fail.
+   Transform code rollback bằng cách revert commit (CI/CD re-deploy version cũ).
 
 Flow:
-  Developer push -> CodeCommit -> CDK Pipelines trigger
-    -> Synth (validate all stacks)
-    -> Self-update pipeline (neu pipeline definition thay doi)
-    -> Deploy Dev (auto)
-    -> Run integration tests on Dev
-    -> Deploy Staging (auto)
-    -> Run smoke tests on Staging
-    -> Manual Approval
-    -> Deploy Prod
+  Developer push → CodeCommit → CDK Pipelines trigger
+    → Synth (validate all stacks)
+    → Self-update pipeline (nếu pipeline definition thay đổi)
+    → Deploy Dev (auto)
+    → Run integration tests on Dev
+    → Deploy Staging (auto)
+    → Run smoke tests on Staging
+    → Manual Approval
+    → Deploy Prod
 """
 from aws_cdk import (
     Stack,
@@ -62,10 +62,10 @@ from stacks.analytics_stack import AnalyticsStack
 
 
 class DataPlatformStage(Stage):
-    """Mot environment cua data platform (dev/staging/prod) deploy nhu 1 don vi."""
+    """Một environment của data platform (dev/staging/prod) deploy như 1 đơn vị."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, **kwargs):
-        """Tao tat ca stacks cho 1 environment, truyen dependencies giua chung."""
+        """Tạo tất cả stacks cho 1 environment, truyền dependencies giữa chúng."""
         super().__init__(scope, construct_id, **kwargs)
 
         storage = StorageStack(self, "Storage", env_name=env_name)
@@ -98,10 +98,10 @@ class DataPlatformStage(Stage):
 
 
 class CICDStack(Stack):
-    """Self-mutating CDK Pipeline: Source -> Synth -> Deploy Dev -> Staging -> Prod."""
+    """Self-mutating CDK Pipeline: Source → Synth → Deploy Dev → Staging → Prod."""
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs):
-        """Khoi tao pipeline voi CodeCommit source, testing gates, va multi-env deploy."""
+        """Khởi tạo pipeline với CodeCommit source, testing gates, và multi-env deploy."""
         super().__init__(scope, construct_id, **kwargs)
 
         # --- Source: CodeCommit repository ---

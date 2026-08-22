@@ -1,4 +1,4 @@
-"""Unit tests for domain onboarding script."""
+"""Unit tests cho script onboarding domain."""
 import pytest
 import sys
 import tempfile

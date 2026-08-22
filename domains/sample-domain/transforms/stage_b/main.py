@@ -1,9 +1,9 @@
-"""Stage B: Business logic transform - staging to curated zone.
+"""Stage B: Biến đổi business logic - từ staging sang curated zone.
 
-Performs:
-- Joins and enrichment
-- Business aggregations (daily sales by category/region)
-- Partitioned write to curated Iceberg table
+Thực hiện:
+- Join và làm giàu dữ liệu
+- Tổng hợp nghiệp vụ (doanh thu hàng ngày theo category/region)
+- Ghi vào Iceberg table curated có partition
 """
 import sys
 from awsglue.transforms import *

@@ -1,14 +1,14 @@
 """
-Analytics Stack - Cung cap cong cu cho data consumers query va visualize data.
+Analytics Stack - Cung cấp công cụ cho data consumers query và visualize data.
 
-Tao:
-1. Athena Workgroup: Moi truong query co kiem soat chi phi (10 GB scan limit),
-   ket qua tu dong luu vao S3 va encrypt, xoa sau 30 ngay
-2. QuickSight IAM Role: Cho phep QuickSight doc data tu curated/analytics buckets
-   va chay queries qua Athena
+Tạo:
+1. Athena Workgroup: Môi trường query có kiểm soát chi phí (10 GB scan limit),
+   kết quả tự động lưu vào S3 và encrypt, xoá sau 30 ngày
+2. QuickSight IAM Role: Cho phép QuickSight đọc data từ curated/analytics buckets
+   và chạy queries qua Athena
 
-Chi phi control: bytes_scanned_cutoff ngan query quet qua nhieu data (tranh bill shock).
-Engine version 3: Ho tro Iceberg tables native, khong can plugin.
+Chi phí control: bytes_scanned_cutoff ngăn query quét quá nhiều data (tránh bill shock).
+Engine version 3: Hỗ trợ Iceberg tables native, không cần plugin.
 """
 from aws_cdk import (
     Stack,
@@ -23,7 +23,7 @@ from constructs import Construct
 
 
 class AnalyticsStack(Stack):
-    """Tao Athena workgroup (cost-controlled) va QuickSight IAM role."""
+    """Tạo Athena workgroup (cost-controlled) và QuickSight IAM role."""
 
     def __init__(
         self,

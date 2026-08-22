@@ -1,34 +1,34 @@
 # Domains
 
-## What is this?
+## Đây là gì?
 
-Moi thu muc con o day dai dien cho mot data domain - mot nhom du lieu thuoc ve mot team hoac line of business cu the. Day la noi data producers viet transform code, dinh nghia data quality rules, va cau hinh pipeline cua ho.
+Mỗi thư mục con ở đây đại diện cho một data domain - một nhóm dữ liệu thuộc về một team hoặc line of business cụ thể. Đây là nơi data producers viết transform code, định nghĩa data quality rules, và cấu hình pipeline của họ.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- **Ownership ro rang**: Moi domain co code rieng, team rieng chiu trach nhiem
-- **Self-service**: Team moi tu onboard bang cach copy domain-template va chay onboard.py
-- **Isolation**: Domain A khong the vo tinh anh huong den pipeline cua Domain B
-- **Standardization**: Tat ca domains deu theo cung cau truc (stage_a, stage_b, data_quality, athena) nen de hieu va maintain
+- **Ownership rõ ràng**: Mỗi domain có code riêng, team riêng chịu trách nhiệm
+- **Self-service**: Team mới tự onboard bằng cách copy domain-template và chạy onboard.py
+- **Isolation**: Domain A không thể vô tình ảnh hưởng đến pipeline của Domain B
+- **Standardization**: Tất cả domains đều theo cùng cấu trúc (stage_a, stage_b, data_quality, athena) nên dễ hiểu và maintain
 
-## How does it work?
+## Hoạt động như thế nào?
 
-Khi mot team muon dua du lieu len platform:
+Khi một team muốn đưa dữ liệu lên platform:
 
-1. Chay `onboard.py` de tao domain moi tu template
-2. Cau hinh `config.yaml` (schedule, worker size, governance rules)
-3. Viet transform code trong `transforms/stage_a/` va `transforms/stage_b/`
-4. Dinh nghia data quality rules
-5. Commit + push --> CI/CD tu dong deploy code len S3 --> Glue job doc tu do
+1. Chạy `onboard.py` để tạo domain mới từ template
+2. Cấu hình `config.yaml` (schedule, worker size, governance rules)
+3. Viết transform code trong `transforms/stage_a/` và `transforms/stage_b/`
+4. Định nghĩa data quality rules
+5. Commit + push → CI/CD tự động deploy code lên S3 → Glue job đọc từ đó
 
-## Structure
+## Cấu trúc
 
 ```
 domains/
-├── domain-template/        # Template dung de tao domain moi
-│   ├── config.yaml         # Template config (dien thong tin domain)
-│   └── onboard.py          # Script tu dong tao domain
-└── sample-domain/          # Domain mau de lam vi du
+├── domain-template/        # Template dùng để tạo domain mới
+│   ├── config.yaml         # Template config (điền thông tin domain)
+│   └── onboard.py          # Script tự động tạo domain
+└── sample-domain/          # Domain mẫu để làm ví dụ
     ├── transforms/         # Code Glue jobs
     ├── data_quality/       # DQDL rules
     ├── athena/             # SQL views cho data consumers

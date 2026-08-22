@@ -1,22 +1,22 @@
 # Monitoring
 
-## What is this?
+## Đây là gì?
 
-Thu muc chua cac dinh nghia cho dashboards va alarms cua data platform. Hien tai monitoring duoc deploy qua CDK (monitoring_stack.py), folder nay danh cho cac config bo sung.
+Thư mục chứa các định nghĩa cho dashboards và alarms của data platform. Hiện tại monitoring được deploy qua CDK (monitoring_stack.py), folder này dành cho các config bổ sung.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- **Phat hien su co nhanh**: Alarm bao ngay khi Glue job fail hoac pipeline timeout
-- **Visibility**: Dashboard cho thay trang thai pipeline real-time ma khong can check tung service
-- **Root cause analysis**: Khi co loi, biet ngay can xem log o dau
-- **Trend detection**: Nhan ra pipeline chay cham dan truoc khi no timeout
+- **Phát hiện sự cố nhanh**: Alarm báo ngay khi Glue job fail hoặc pipeline timeout
+- **Visibility**: Dashboard cho thấy trạng thái pipeline real-time mà không cần check từng service
+- **Root cause analysis**: Khi có lỗi, biết ngay cần xem log ở đâu
+- **Trend detection**: Nhận ra pipeline chạy chậm dần trước khi nó timeout
 
-## How does it work?
+## Hoạt động như thế nào?
 
-Monitoring stack tao:
-1. **SNS Topic**: Noi nhan tat ca alerts, co the subscribe email/Slack/PagerDuty
-2. **CloudWatch Alarms**: Trigger khi Glue job fail hoac Step Functions execution fail
-3. **CloudWatch Dashboard**: Hien thi Glue job duration va Step Functions success/fail count
+Monitoring stack tạo:
+1. **SNS Topic**: Nơi nhận tất cả alerts, có thể subscribe email/Slack/PagerDuty
+2. **CloudWatch Alarms**: Trigger khi Glue job fail hoặc Step Functions execution fail
+3. **CloudWatch Dashboard**: Hiển thị Glue job duration và Step Functions success/fail count
 
 ```
 Glue Job Fail --> CloudWatch Metric --> Alarm --> SNS --> Email/Slack
@@ -24,10 +24,10 @@ Step Functions Fail --> CloudWatch Metric --> Alarm --> SNS --> Email/Slack
 Glue DQ Fail --> EventBridge --> Lambda --> SNS --> Email/Slack
 ```
 
-## Structure
+## Cấu trúc
 
 ```
 monitoring/
-├── dashboards/     # Additional dashboard JSON definitions
-└── alarms/         # Additional alarm configurations
+├── dashboards/     # Định nghĩa dashboard JSON bổ sung
+└── alarms/         # Cấu hình alarm bổ sung
 ```

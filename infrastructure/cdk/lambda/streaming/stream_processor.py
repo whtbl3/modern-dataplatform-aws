@@ -1,14 +1,14 @@
 """
-Stream Processor Lambda - Chuyen du lieu real-time tu Kinesis vao S3.
+Stream Processor Lambda - Chuyển dữ liệu real-time từ Kinesis vào S3.
 
-Nhan batch records tu Kinesis (toi da 100 records hoac sau 60 giay),
-decode base64, validate JSON, them metadata (_ingested_at, _partition_id),
-roi ghi thanh 1 file JSON Lines vao S3 raw zone.
+Nhận batch records từ Kinesis (tối đa 100 records hoặc sau 60 giây),
+decode base64, validate JSON, thêm metadata (_ingested_at, _partition_id),
+rồi ghi thành 1 file JSON Lines vào S3 raw zone.
 
-Output path duoc partition theo thoi gian:
+Output path được partition theo thời gian:
   streaming-events/year=2024/month=01/day=15/hour=08/batch_20240115080000_abc12345.json
 
-Records JSON khong hop le bi skip (log warning) nhung khong fail ca batch.
+Records JSON không hợp lệ bị skip (log warning) nhưng không fail cả batch.
 """
 import json
 import os
@@ -22,7 +22,7 @@ TARGET_PREFIX = os.environ["TARGET_PREFIX"]
 
 
 def handler(event, context):
-    """Decode Kinesis records, validate JSON, ghi batch vao S3 theo time partition."""
+    """Decode Kinesis records, validate JSON, ghi batch vào S3 theo time partition."""
     records = event.get("Records", [])
     if not records:
         return {"statusCode": 200, "body": "No records"}

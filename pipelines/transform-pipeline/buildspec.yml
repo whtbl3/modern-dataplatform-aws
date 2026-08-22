@@ -1,8 +1,8 @@
 version: 0.2
 
 # BuildSpec cho Transform code CI/CD.
-# Chay unit tests + data contract validation, roi deploy scripts len S3.
-# Glue jobs doc scripts tu S3, nen thay doi code co hieu luc ngay lan chay tiep theo.
+# Chạy unit tests + data contract validation, rồi deploy scripts lên S3.
+# Glue jobs đọc scripts từ S3, nên thay đổi code có hiệu lực ngay lần chạy tiếp theo.
 
 phases:
   install:

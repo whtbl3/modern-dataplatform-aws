@@ -1,16 +1,16 @@
 """
-Data Quality Rules - Dinh nghia tieu chuan chat luong du lieu cho sample-domain.
+Data Quality Rules - Định nghĩa tiêu chuẩn chất lượng dữ liệu cho sample-domain.
 
-Su dung DQDL (Data Quality Definition Language) cua AWS Glue.
-Glue Data Quality se chay cac rules nay SAU moi lan Stage A/B transform xong.
-Neu bat ky rule nao FAIL, EventBridge bat event va trigger alert Lambda.
+Sử dụng DQDL (Data Quality Definition Language) của AWS Glue.
+Glue Data Quality sẽ chạy các rules này SAU mỗi lần Stage A/B transform xong.
+Nếu bất kỳ rule nào FAIL, EventBridge bắt event và trigger alert Lambda.
 
-Rules kiem tra:
-- Schema: Cac cot bat buoc phai ton tai
-- Completeness: Cot quan trong khong duoc null (>= 95%)
-- Uniqueness: Primary key khong trung lap
-- Range: Gia tri nam trong khoang hop ly (amount > 0, quantity 1-10000)
-- Domain: Gia tri thuoc tap hop cho phep (category, region, payment_method)
+Rules kiểm tra:
+- Schema: Các cột bắt buộc phải tồn tại
+- Completeness: Cột quan trọng không được null (>= 95%)
+- Uniqueness: Primary key không trùng lặp
+- Range: Giá trị nằm trong khoảng hợp lý (amount > 0, quantity 1-10000)
+- Domain: Giá trị thuộc tập hợp cho phép (category, region, payment_method)
 """
 
 ORDERS_STAGING_RULES = """

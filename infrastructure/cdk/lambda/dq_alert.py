@@ -1,12 +1,12 @@
 """
-Data Quality Alert Lambda - Thong bao khi du lieu khong dat chuan.
+Data Quality Alert Lambda - Thông báo khi dữ liệu không đạt chuẩn.
 
-Duoc goi boi EventBridge khi Glue Data Quality evaluation tra ve state=FAILED.
-Parse event de lay danh sach rules bi vi pham, format thanh message doc duoc,
-roi gui qua SNS topic (tu do di toi email/Slack/PagerDuty).
+Được gọi bởi EventBridge khi Glue Data Quality evaluation trả về state=FAILED.
+Parse event để lấy danh sách rules bị vi phạm, format thành message đọc được,
+rồi gửi qua SNS topic (từ đó đi tới email/Slack/PagerDuty).
 
-Input: EventBridge event tu Glue Data Quality (chua ruleset name, score, failed rules)
-Output: SNS message voi subject "[Data Quality FAILED] {ruleset}" va chi tiet rules fail
+Input: EventBridge event từ Glue Data Quality (chứa ruleset name, score, failed rules)
+Output: SNS message với subject "[Data Quality FAILED] {ruleset}" và chi tiết rules fail
 """
 import json
 import os
@@ -17,7 +17,7 @@ ALERT_TOPIC_ARN = os.environ["ALERT_TOPIC_ARN"]
 
 
 def handler(event, context):
-    """Parse DQ evaluation results, gui SNS alert voi danh sach rules FAIL."""
+    """Parse DQ evaluation results, gửi SNS alert với danh sách rules FAIL."""
     detail = event.get("detail", {})
     ruleset_name = detail.get("rulesetNames", ["unknown"])[0]
     state = detail.get("state", "UNKNOWN")

@@ -1,19 +1,19 @@
 # CDK Stacks
 
-## What is this?
+## Đây là gì?
 
-Day la noi dinh nghia toan bo AWS resources cua data platform bang AWS CDK (Cloud Development Kit). Moi file trong `stacks/` tuong ung voi mot CloudFormation stack - mot nhom resources lien quan duoc deploy va quan ly cung nhau.
+Đây là nơi định nghĩa toàn bộ AWS resources của data platform bằng AWS CDK (Cloud Development Kit). Mỗi file trong `stacks/` tương ứng với một CloudFormation stack - một nhóm resources liên quan được deploy và quản lý cùng nhau.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- Thay vi click tay 50+ resources tren AWS Console, chi can chay `cdk deploy`
-- Moi resource duoc config voi security best practices (encryption, block public access, least privilege)
-- Tach thanh nhieu stacks de co the deploy/update tung phan doc lap
-- Parameters hoa theo environment (dev dung it workers, prod dung nhieu hon)
+- Thay vì click tay 50+ resources trên AWS Console, chỉ cần chạy `cdk deploy`
+- Mọi resource được config với security best practices (encryption, block public access, least privilege)
+- Tách thành nhiều stacks để có thể deploy/update từng phần độc lập
+- Parameters hoá theo environment (dev dùng ít workers, prod dùng nhiều hơn)
 
-## How does it work?
+## Hoạt động như thế nào?
 
-`app.py` la entry point. No khoi tao tung stack theo thu tu dependency:
+`app.py` là entry point. Nó khởi tạo từng stack theo thứ tự dependency:
 
 ```
 Storage (S3 + IAM)
@@ -27,14 +27,14 @@ Storage (S3 + IAM)
     ├── Analytics (Athena + QuickSight)
     └── CICD (CodeCommit + CodePipeline)
                                         |
-                                Monitoring (CloudWatch) [doc lap]
+                                Monitoring (CloudWatch) [độc lập]
 ```
 
 ## Files
 
-| File | Chuc nang |
+| File | Chức năng |
 |------|-----------|
-| `app.py` | Entry point - tao tat ca stacks, truyen dependencies giua chung |
+| `app.py` | Entry point - tạo tất cả stacks, truyền dependencies giữa chúng |
 | `cdk.json` | CDK runtime config (command, default context) |
 | `stacks/storage_stack.py` | S3 buckets + Glue IAM role |
 | `stacks/governance_stack.py` | Glue databases + Lake Formation |
@@ -46,4 +46,4 @@ Storage (S3 + IAM)
 | `stacks/streaming_stack.py` | Kinesis stream + Lambda processor |
 | `stacks/analytics_stack.py` | Athena workgroup + QuickSight role |
 | `stacks/cicd_stack.py` | CodeCommit repo + CodeBuild + CodePipeline |
-| `lambda/` | Source code cua cac Lambda functions |
+| `lambda/` | Source code của các Lambda functions |

@@ -1,10 +1,10 @@
 # Modern Data Platform on AWS
 
-## What is this?
+## Đây là gì?
 
-A production-ready, serverless data platform built entirely on AWS cloud-native services. The platform enables teams across the organization to automatically ingest, transform, and share data in a governed manner.
+Một nền tảng dữ liệu serverless, production-ready, được xây dựng hoàn toàn trên các dịch vụ cloud-native của AWS. Nền tảng cho phép các team trong tổ chức tự động thu thập, biến đổi, và chia sẻ dữ liệu một cách có kiểm soát.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
 Các tổ chức thường gặp khó khăn khi:
 * **Dữ liệu bị phân tán:** Dữ liệu nằm rải rác ở nhiều hệ thống, thiếu một nơi tập trung để truy cập.
@@ -20,7 +20,7 @@ Nền tảng này giải quyết bằng cách cung cấp:
 * **Kiểm soát chi phí (Cost control):** Mô hình Serverless (chỉ trả phí khi sử dụng), giới hạn truy vấn Athena, cùng các chính sách quản lý vòng đời dữ liệu (lifecycle policies).
 * **Xử lý thời gian thực & theo mẻ (Real-time + Batch):** Hỗ trợ cả truyền dữ liệu liên tục (Kinesis) lẫn tải lên theo mẻ (S3 upload).
 
-## How does it work?
+## Hoạt động như thế nào?
 
 ```
 [Data Sources] --> [S3 Raw Zone] --> [EventBridge] --> [Lambda Trigger]
@@ -41,50 +41,50 @@ Nền tảng này giải quyết bằng cách cung cấp:
                                 [Athena / QuickSight / Cross-account sharing]
 ```
 
-## Architecture (10 CDK Stacks)
+## Kiến trúc (10 CDK Stacks)
 
-| Stack | Chuc nang |
+| Stack | Chức năng |
 |-------|-----------|
 | Storage | S3 buckets (raw/staging/curated/analytics/scripts) + IAM |
 | Governance | Glue Data Catalog + Lake Formation access control |
 | Transform | Glue ETL jobs (Stage A + B) + Crawler |
 | Orchestration | Step Functions workflow + EventBridge schedule |
 | Monitoring | CloudWatch dashboard + alarms + SNS alerts |
-| Ingestion | Lambda trigger khi file moi upload vao S3 |
+| Ingestion | Lambda trigger khi file mới upload vào S3 |
 | DataQuality | Glue Data Quality rules + alert khi fail |
 | Streaming | Kinesis stream + Lambda processor |
 | Analytics | Athena workgroup + QuickSight role |
 | CICD | CodeCommit + CodeBuild + CodePipeline |
 
-## Quick Start
+## Bắt đầu nhanh
 
 ```bash
-# 1. Install dependencies
+# 1. Cài đặt dependencies
 uv sync
 
-# 2. Run tests
+# 2. Chạy tests
 uv run pytest tests/unit/ -v
 
-# 3. Generate sample data
+# 3. Tạo dữ liệu mẫu
 uv run python domains/sample-domain/data/generate_sample.py
 
-# 4. Validate CDK stacks
+# 4. Kiểm tra CDK stacks
 cdk synth --context env=dev --app "uv run python infrastructure/cdk/app.py"
 
-# 5. Deploy (requires AWS credentials)
+# 5. Deploy (cần AWS credentials)
 cdk deploy --all --context env=dev --app "uv run python infrastructure/cdk/app.py"
 
-# 6. Onboard a new domain
+# 6. Onboard domain mới
 uv run python domains/domain-template/onboard.py --domain sales --owner sales@company.com --dataset transactions
 ```
 
-## Project Structure
+## Cấu trúc dự án
 
 ```
 aws-prj4/
 ├── infrastructure/cdk/     # CDK stacks (Infrastructure as Code)
-├── domains/                # Data domains (sample + template)
-├── pipelines/              # CI/CD pipeline definitions
+├── domains/                # Các miền dữ liệu (sample + template)
+├── pipelines/              # Định nghĩa CI/CD pipeline
 ├── tests/                  # Unit + integration tests
 └── monitoring/             # Dashboard + alarm definitions
 ```
@@ -111,9 +111,9 @@ main ─────────────────────────
 
 Chi tiết: [docs/git-branching-strategy.md](docs/git-branching-strategy.md)
 
-## Prerequisites
+## Yêu cầu
 
 - Python 3.12+
-- Node.js (for CDK CLI)
-- AWS CLI configured with appropriate credentials
+- Node.js (cho CDK CLI)
+- AWS CLI đã cấu hình credentials
 - `uv` package manager

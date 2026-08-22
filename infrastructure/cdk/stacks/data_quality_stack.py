@@ -1,15 +1,15 @@
 """
-Data Quality Stack - Dam bao du lieu dat chuan truoc khi vao curated zone.
+Data Quality Stack - Đảm bảo dữ liệu đạt chuẩn trước khi vào curated zone.
 
-Tao:
-1. Lambda function nhan event khi Glue Data Quality evaluation FAIL,
-   parse danh sach rules bi vi pham, gui alert qua SNS
-2. EventBridge rule lang nghe su kien "Data Quality Evaluation Results Available"
-   voi state=FAILED
-3. Macie IAM role de scan PII trong raw va curated buckets
+Tạo:
+1. Lambda function nhận event khi Glue Data Quality evaluation FAIL,
+   parse danh sách rules bị vi phạm, gửi alert qua SNS
+2. EventBridge rule lắng nghe sự kiện "Data Quality Evaluation Results Available"
+   với state=FAILED
+3. Macie IAM role để scan PII trong raw và curated buckets
 
-Data quality rules (DQDL) duoc dinh nghia trong domains/*/data_quality/rules.py
-va duoc ap dung boi Glue jobs trong pipeline.
+Data quality rules (DQDL) được định nghĩa trong domains/*/data_quality/rules.py
+và được áp dụng bởi Glue jobs trong pipeline.
 """
 from aws_cdk import (
     Stack,

@@ -1,13 +1,13 @@
 """
-Governance Stack - Quan ly metadata catalog va access control.
+Governance Stack - Quản lý metadata catalog và access control.
 
-Tao Glue Data Catalog databases (la noi luu thong tin ve tables, schemas, partitions)
-va dang ky S3 buckets voi Lake Formation de kiem soat ai duoc doc/ghi data nao.
+Tạo Glue Data Catalog databases (là nơi lưu thông tin về tables, schemas, partitions)
+và đăng ký S3 buckets với Lake Formation để kiểm soát ai được đọc/ghi data nào.
 
-Glue Catalog giong nhu "muc luc" cua data lake - khong chua data, chi chua
-thong tin VE data (ten bang, cot, kieu du lieu, vi tri S3).
-Lake Formation la lop access control phia tren - quyet dinh user/role nao
-duoc query bang nao, cot nao.
+Glue Catalog giống như "mục lục" của data lake - không chứa data, chỉ chứa
+thông tin VỀ data (tên bảng, cột, kiểu dữ liệu, vị trí S3).
+Lake Formation là lớp access control phía trên - quyết định user/role nào
+được query bảng nào, cột nào.
 """
 from aws_cdk import (
     Stack,
@@ -19,10 +19,10 @@ from constructs import Construct
 
 
 class GovernanceStack(Stack):
-    """Tao Glue Catalog databases va dang ky Lake Formation resources."""
+    """Tạo Glue Catalog databases và đăng ký Lake Formation resources."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, storage_stack, **kwargs):
-        """Khoi tao 2 databases (raw + curated) va dang ky buckets voi Lake Formation."""
+        """Khởi tạo 2 databases (raw + curated) và đăng ký buckets với Lake Formation."""
         super().__init__(scope, construct_id, **kwargs)
 
         self.database = glue.CfnDatabase(

@@ -1,12 +1,12 @@
-# Documentation
+# Tài liệu
 
-## What is this?
+## Đây là gì?
 
-Tai lieu huong dan cho team lam viec voi data platform.
-Chi chua nhung tai lieu KHONG the derive tu code (quy trinh, quy dinh, quyết dinh).
+Tài liệu hướng dẫn cho team làm việc với data platform.
+Chỉ chứa những tài liệu KHÔNG thể suy ra từ code (quy trình, quy định, quyết định).
 
-## Files
+## Nội dung
 
-| File | Noi dung |
+| File | Nội dung |
 |------|----------|
-| `git-branching-strategy.md` | Quy dinh Git workflow: GitHub Flow, naming, review process, commit convention |
+| `git-branching-strategy.md` | Quy định Git workflow: GitHub Flow, naming, review process, commit convention |

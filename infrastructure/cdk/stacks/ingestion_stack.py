@@ -1,12 +1,12 @@
 """
-Ingestion Stack - Tu dong trigger pipeline khi co data moi.
+Ingestion Stack - Tự động trigger pipeline khi có data mới.
 
-Tao EventBridge rule lang nghe su kien "Object Created" tu S3 raw bucket.
-Khi file .csv moi upload vao prefix "sample-domain/", EventBridge trigger Lambda.
-Lambda parse event va start Step Functions execution.
+Tạo EventBridge rule lắng nghe sự kiện "Object Created" từ S3 raw bucket.
+Khi file .csv mới upload vào prefix "sample-domain/", EventBridge trigger Lambda.
+Lambda parse event và start Step Functions execution.
 
-Dung EventBridge thay vi S3 Notification truc tiep de tranh dependency cycle
-giua Storage stack va Ingestion stack (S3 bucket khong can biet ve Lambda).
+Dùng EventBridge thay vì S3 Notification trực tiếp để tránh dependency cycle
+giữa Storage stack và Ingestion stack (S3 bucket không cần biết về Lambda).
 """
 from aws_cdk import (
     Stack,
@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 class IngestionStack(Stack):
-    """Tao Lambda trigger va EventBridge rule cho S3 file ingestion."""
+    """Tạo Lambda trigger và EventBridge rule cho S3 file ingestion."""
 
     def __init__(
         self,

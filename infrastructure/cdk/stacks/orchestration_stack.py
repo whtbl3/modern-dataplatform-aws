@@ -1,12 +1,12 @@
 """
-Orchestration Stack - Dieu phoi trat tu chay cua pipeline.
+Orchestration Stack - Điều phối trật tự chạy của pipeline.
 
-Tao Step Functions state machine dieu khien luong chay: Stage A --> Stage B.
-Neu Stage A fail thi khong chay Stage B (tranh xu ly data loi).
-Neu bat ky step nao fail, pipeline chuyen sang trang thai FAILED de alert.
+Tạo Step Functions state machine điều khiển luồng chạy: Stage A → Stage B.
+Nếu Stage A fail thì không chạy Stage B (tránh xử lý data lỗi).
+Nếu bất kỳ step nào fail, pipeline chuyển sang trạng thái FAILED để alert.
 
-Kem theo EventBridge rule chay pipeline tu dong moi ngay luc 7:00 UTC.
-Pipeline cung co the duoc trigger boi Lambda (khi co file moi) hoac manually.
+Kèm theo EventBridge rule chạy pipeline tự động mỗi ngày lúc 7:00 UTC.
+Pipeline cũng có thể được trigger bởi Lambda (khi có file mới) hoặc manually.
 """
 from aws_cdk import (
     Stack,
@@ -20,10 +20,10 @@ from constructs import Construct
 
 
 class OrchestrationStack(Stack):
-    """Tao Step Functions pipeline va EventBridge daily schedule."""
+    """Tạo Step Functions pipeline và EventBridge daily schedule."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, transform_stack, **kwargs):
-        """Khoi tao state machine: Stage A -> Stage B -> Success (voi error handling)."""
+        """Khởi tạo state machine: Stage A → Stage B → Success (với error handling)."""
         super().__init__(scope, construct_id, **kwargs)
 
         stage_a_job_name = transform_stack.stage_a_job.name

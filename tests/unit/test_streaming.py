@@ -1,4 +1,4 @@
-"""Unit tests for the streaming processor Lambda function."""
+"""Unit tests cho Lambda function xử lý streaming."""
 import pytest
 import json
 import os

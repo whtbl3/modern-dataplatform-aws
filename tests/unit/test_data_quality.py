@@ -1,4 +1,4 @@
-"""Unit tests for data quality rules and alert Lambda."""
+"""Unit tests cho data quality rules và alert Lambda."""
 import pytest
 import json
 import os

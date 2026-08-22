@@ -1,13 +1,13 @@
 """
 Monitoring Stack - Observability cho data platform.
 
-Tao 3 thanh phan chinh:
-1. SNS Topic: Kenh trung tam nhan tat ca alerts (subscribe email, Slack, PagerDuty)
-2. CloudWatch Alarms: Phat hien khi Glue job hoac Step Functions fail
-3. CloudWatch Dashboard: Hien thi real-time metrics (job duration, success/fail count)
+Tạo 3 thành phần chính:
+1. SNS Topic: Kênh trung tâm nhận tất cả alerts (subscribe email, Slack, PagerDuty)
+2. CloudWatch Alarms: Phát hiện khi Glue job hoặc Step Functions fail
+3. CloudWatch Dashboard: Hiển thị real-time metrics (job duration, success/fail count)
 
-Khi co su co, luong alert la:
-  Metric vuot nguong --> Alarm ALARM --> SNS publish --> Email/Slack thong bao
+Khi có sự cố, luồng alert là:
+  Metric vượt ngưỡng → Alarm ALARM → SNS publish → Email/Slack thông báo
 """
 from aws_cdk import (
     Stack,
@@ -21,10 +21,10 @@ from constructs import Construct
 
 
 class MonitoringStack(Stack):
-    """Tao SNS alerts, CloudWatch alarms, va dashboard cho platform."""
+    """Tạo SNS alerts, CloudWatch alarms, và dashboard cho platform."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, **kwargs):
-        """Khoi tao monitoring: alert topic, Glue alarm, Step Functions alarm, dashboard."""
+        """Khởi tạo monitoring: alert topic, Glue alarm, Step Functions alarm, dashboard."""
         super().__init__(scope, construct_id, **kwargs)
 
         self.alert_topic = sns.Topic(

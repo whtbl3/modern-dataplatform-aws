@@ -1,4 +1,4 @@
-"""Unit tests for transform logic (runs without Spark/Glue dependencies)."""
+"""Unit tests cho transform logic (chạy không cần Spark/Glue dependencies)."""
 import pytest
 
 

@@ -1,16 +1,16 @@
 # Sample Domain (E-commerce Sales)
 
-## What is this?
+## Đây là gì?
 
-Day la domain mau mo phong du lieu ban hang e-commerce. No duoc dung de demo toan bo data pipeline tu dau den cuoi: ingest CSV --> transform --> data quality check --> curated Iceberg table --> Athena queries.
+Đây là domain mẫu mô phỏng dữ liệu bán hàng e-commerce. Nó được dùng để demo toàn bộ data pipeline từ đầu đến cuối: ingest CSV → transform → data quality check → curated Iceberg table → Athena queries.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- Cung cap vi du cu the de team hieu cach mot domain hoat dong
-- Dung de test pipeline truoc khi onboard domain that
-- Lam baseline de do performance va chi phi
+- Cung cấp ví dụ cụ thể để team hiểu cách một domain hoạt động
+- Dùng để test pipeline trước khi onboard domain thật
+- Làm baseline để đo performance và chi phí
 
-## How does it work?
+## Hoạt động như thế nào?
 
 ```
 generate_sample.py --> orders.csv --> Upload to S3 Raw
@@ -25,12 +25,12 @@ generate_sample.py --> orders.csv --> Upload to S3 Raw
                           Athena views (daily_revenue, top_categories, ...)
 ```
 
-## Structure
+## Cấu trúc
 
-| Folder | Chuc nang |
+| Folder | Chức năng |
 |--------|-----------|
-| `data/` | Sample data generator va file CSV output |
+| `data/` | Sample data generator và file CSV output |
 | `transforms/stage_a/` | Light transform: schema validation, dedup, format conversion |
 | `transforms/stage_b/` | Heavy transform: daily sales aggregation, cumulative revenue |
-| `data_quality/` | DQDL rules cho orders_staging va sales_summary tables |
-| `athena/` | SQL views de consumers query du lieu curated |
+| `data_quality/` | DQDL rules cho orders_staging và sales_summary tables |
+| `athena/` | SQL views để consumers query dữ liệu curated |

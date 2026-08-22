@@ -1,15 +1,15 @@
 """
-Storage Stack - Tang luu tru cua data platform.
+Storage Stack - Tầng lưu trữ của data platform.
 
-Tao 5 S3 buckets theo data lake zones pattern:
-- Raw: Du lieu goc chua xu ly (CSV, JSON tu source systems)
-- Staging: Du lieu dang duoc xu ly (sau Stage A, truoc Stage B)
-- Curated: Du lieu sach, da ap dung business logic, san sang consume
-- Analytics: Du lieu da aggregate cho BI dashboards
-- Scripts: Chua code cua Glue jobs (deploy tu CI/CD pipeline)
+Tạo 5 S3 buckets theo data lake zones pattern:
+- Raw: Dữ liệu gốc chưa xử lý (CSV, JSON từ source systems)
+- Staging: Dữ liệu đang được xử lý (sau Stage A, trước Stage B)
+- Curated: Dữ liệu sạch, đã áp dụng business logic, sẵn sàng consume
+- Analytics: Dữ liệu đã aggregate cho BI dashboards
+- Scripts: Chứa code của Glue jobs (deploy từ CI/CD pipeline)
 
-Moi bucket deu co encryption, block public access, va removal policy phu hop.
-Raw bucket bat EventBridge notifications de trigger pipeline tu dong.
+Mỗi bucket đều có encryption, block public access, và removal policy phù hợp.
+Raw bucket bật EventBridge notifications để trigger pipeline tự động.
 """
 from aws_cdk import (
     Stack,
@@ -21,10 +21,10 @@ from constructs import Construct
 
 
 class StorageStack(Stack):
-    """Tao S3 buckets cho data lake zones va IAM role cho Glue."""
+    """Tạo S3 buckets cho data lake zones và IAM role cho Glue."""
 
     def __init__(self, scope: Construct, construct_id: str, env_name: str, **kwargs):
-        """Khoi tao storage resources. Prod buckets duoc RETAIN khi xoa stack."""
+        """Khởi tạo storage resources. Prod buckets được RETAIN khi xoá stack."""
         super().__init__(scope, construct_id, **kwargs)
 
         self.env_name = env_name

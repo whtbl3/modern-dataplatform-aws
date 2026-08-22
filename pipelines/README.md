@@ -1,23 +1,23 @@
-# CI/CD Pipelines - DataOps on AWS
+# CI/CD Pipelines - DataOps trên AWS
 
-## What is this?
+## Đây là gì?
 
-Implementation cua DataOps approach theo AWS Well-Architected Data Analytics Lens.
-Su dung CDK Pipelines (self-mutating pipeline) de tu dong hoa toan bo lifecycle:
-code commit -> test -> deploy -> monitor -> alert.
+Implementation của DataOps approach theo AWS Well-Architected Data Analytics Lens.
+Sử dụng CDK Pipelines (self-mutating pipeline) để tự động hoá toàn bộ lifecycle:
+code commit → test → deploy → monitor → alert.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-| Van de | Giai phap |
+| Vấn đề | Giải pháp |
 |--------|-----------|
-| Deploy thu cong hay loi | Pipeline tu dong, immutable artifacts |
-| "Works on my machine" | Cung 1 artifact deploy vao moi env |
-| Khong biet ai sua gi | Git history + CodePipeline execution logs |
-| Deploy loi khong rollback duoc | CloudFormation auto-rollback + git revert |
-| Khong biet deploy co thanh cong khong | SNS alerts on failure + smoke tests |
-| Pipeline definition outdated | Self-mutating: pipeline tu update chinh no |
+| Deploy thủ công hay lỗi | Pipeline tự động, immutable artifacts |
+| "Works on my machine" | Cùng 1 artifact deploy vào mọi env |
+| Không biết ai sửa gì | Git history + CodePipeline execution logs |
+| Deploy lỗi không rollback được | CloudFormation auto-rollback + git revert |
+| Không biết deploy có thành công không | SNS alerts on failure + smoke tests |
+| Pipeline definition outdated | Self-mutating: pipeline tự update chính nó |
 
-## How does it work?
+## Hoạt động như thế nào?
 
 ### AWS Best Practice: CDK Pipelines (Self-Mutating)
 
@@ -29,9 +29,9 @@ code commit -> test -> deploy -> monitor -> alert.
 │  ┌──────────┐    ┌──────────────────┐    ┌────────────────────┐         │
 │  │  SOURCE  │    │      SYNTH       │    │  UPDATE PIPELINE   │         │
 │  │CodeCommit│───>│ Unit Tests       │───>│ (Self-mutation)    │         │
-│  │  main    │    │ Lint (ruff)      │    │ Tu cap nhat chinh  │         │
-│  └──────────┘    │ CDK Synth        │    │ no neu code thay   │         │
-│                  │ -> cdk.out/      │    │ doi pipeline def   │         │
+│  │  main    │    │ Lint (ruff)      │    │ Tự cập nhật chính  │         │
+│  └──────────┘    │ CDK Synth        │    │ nó nếu code thay   │         │
+│                  │ -> cdk.out/      │    │ đổi pipeline def   │         │
 │                  └──────────────────┘    └─────────┬──────────┘         │
 │                                                     │                    │
 │  ┌──────────────────────────────────────────────────┼────────────────┐  │
@@ -63,31 +63,31 @@ code commit -> test -> deploy -> monitor -> alert.
 │  └───────────────────────────────────────────────────────────────────┘  │
 │                                                                          │
 │  ┌─────────────────────────────────────────────────────────────────┐    │
-│  │ FAILURE HANDLING                                                 │    │
+│  │ XỬ LÝ LỖI                                                       │    │
 │  │  - CloudFormation auto-rollback khi deploy fail                  │    │
-│  │  - EventBridge -> SNS alert khi pipeline FAILED                  │    │
-│  │  - Git revert + re-push de rollback transform code               │    │
+│  │  - EventBridge → SNS alert khi pipeline FAILED                   │    │
+│  │  - Git revert + re-push để rollback transform code               │    │
 │  └─────────────────────────────────────────────────────────────────┘    │
 └─────────────────────────────────────────────────────────────────────────┘
 ```
 
-### DataOps Principles Applied
+### Nguyên tắc DataOps được áp dụng
 
-| Principle | Implementation |
+| Nguyên tắc | Cách triển khai |
 |-----------|---------------|
 | **Version Control Everything** | CodeCommit: infrastructure, transforms, tests, pipeline definition |
-| **Automate Everything** | CDK Pipelines: 0 manual steps tu commit den production |
+| **Automate Everything** | CDK Pipelines: 0 bước thủ công từ commit đến production |
 | **Test Early & Often** | Unit tests (pre-deploy), integration tests (post-dev), smoke tests (post-staging) |
-| **Immutable Artifacts** | CDK synth 1 lan, cung artifact deploy qua 3 envs |
-| **Self-Service** | Teams tu push code, pipeline tu deploy, khong can ticket |
+| **Immutable Artifacts** | CDK synth 1 lần, cùng artifact deploy qua 3 envs |
+| **Self-Service** | Teams tự push code, pipeline tự deploy, không cần ticket |
 | **Observability** | Pipeline failure alerts, test reports, deployment logs |
-| **Small Batches** | Moi commit = 1 pipeline run, khong batch hang tuan |
+| **Small Batches** | Mỗi commit = 1 pipeline run, không batch hàng tuần |
 | **Rollback Capability** | CloudFormation rollback (infra) + git revert (code) |
 
-### Testing Strategy (Shift-Left)
+### Chiến lược kiểm thử (Shift-Left)
 
 ```
-                    Chi phi fix bug
+                    Chi phí fix bug
                          ▲
                          │         x
                          │       x
@@ -97,41 +97,41 @@ code commit -> test -> deploy -> monitor -> alert.
                          └──────────────────────>
                          Dev  Staging  Prod  Production Bug
 
-Tang test:
-  1. Unit Tests         (pre-deploy, moi commit, 0 AWS cost)
-  2. Lint + Security    (pre-deploy, bat loi code style + vulnerabilities)
-  3. Data Contracts     (pre-staging, validate DQ rules van dung)
-  4. Integration Tests  (post-dev, chay voi AWS resources that)
+Tầng test:
+  1. Unit Tests         (pre-deploy, mỗi commit, 0 AWS cost)
+  2. Lint + Security    (pre-deploy, bắt lỗi code style + vulnerabilities)
+  3. Data Contracts     (pre-staging, validate DQ rules vẫn đúng)
+  4. Integration Tests  (post-dev, chạy với AWS resources thật)
   5. Smoke Tests        (post-staging, verify services running)
-  6. Prod Verification  (post-prod, confirm deployment thanh cong)
+  6. Prod Verification  (post-prod, confirm deployment thành công)
 ```
 
 ## Files
 
-| File | Chuc nang |
+| File | Chức năng |
 |------|-----------|
 | `platform-pipeline/buildspec.yml` | CDK synth step: tests + lint + generate templates |
 | `transform-pipeline/buildspec.yml` | Transform code: tests + validate + sync to S3 |
 
-## First-time Setup
+## Thiết lập lần đầu
 
 ```bash
-# 1. Bootstrap CDK (mot lan duy nhat cho moi account/region)
+# 1. Bootstrap CDK (một lần duy nhất cho mỗi account/region)
 cdk bootstrap aws://123456789012/us-east-1
 
-# 2. Deploy pipeline stack (mot lan duy nhat, sau do no tu update)
+# 2. Deploy pipeline stack (một lần duy nhất, sau đó nó tự update)
 cdk deploy DataPlatform-CICD --app "uv run python infrastructure/cdk/app.py"
 
-# 3. Push code len CodeCommit -> pipeline tu dong chay
+# 3. Push code lên CodeCommit → pipeline tự động chạy
 git remote add codecommit https://git-codecommit.us-east-1.amazonaws.com/v1/repos/data-platform
 git push codecommit main
 ```
 
-## Rollback Procedures
+## Quy trình Rollback
 
-| Scenario | Action |
+| Tình huống | Hành động |
 |----------|--------|
-| Infra deploy fail | CloudFormation tu dong rollback, khong can lam gi |
-| Transform code bug | `git revert <commit>` + push -> pipeline deploy lai code cu |
-| Pipeline definition bug | Pipeline tu update -> neu fail, deploy manual `cdk deploy DataPlatform-CICD` |
-| Emergency rollback | `cdk deploy --context env=prod` voi commit truoc do |
+| Infra deploy fail | CloudFormation tự động rollback, không cần làm gì |
+| Transform code bug | `git revert <commit>` + push → pipeline deploy lại code cũ |
+| Pipeline definition bug | Pipeline tự update → nếu fail, deploy manual `cdk deploy DataPlatform-CICD` |
+| Emergency rollback | `cdk deploy --context env=prod` với commit trước đó |

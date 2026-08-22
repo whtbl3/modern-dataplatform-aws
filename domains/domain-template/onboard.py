@@ -1,21 +1,21 @@
 """
-Domain Onboarding Script - Tu dong tao domain moi len data platform.
+Domain Onboarding Script - Tự động tạo domain mới lên data platform.
 
-Khi mot team muon dua du lieu cua ho len platform, ho chi can chay script nay.
-Script se tao toan bo folder structure, config, va boilerplate transform code
-de team co the bat dau ngay ma khong can hieu toan bo architecture.
+Khi một team muốn đưa dữ liệu của họ lên platform, họ chỉ cần chạy script này.
+Script sẽ tạo toàn bộ folder structure, config, và boilerplate transform code
+để team có thể bắt đầu ngay mà không cần hiểu toàn bộ architecture.
 
 Usage:
     python onboard.py --domain sales --owner sales-team@company.com --dataset transactions
 
-Script tao:
+Script tạo:
   domains/{domain_name}/
     ├── config.yaml              # Pipeline config (schedule, workers, governance)
-    ├── transforms/stage_a/main.py  # Boilerplate Stage A code (san sang chay)
-    ├── transforms/stage_b/        # Team tu viet business logic o day
-    ├── data_quality/              # Team dinh nghia DQ rules o day
+    ├── transforms/stage_a/main.py  # Boilerplate Stage A code (sẵn sàng chạy)
+    ├── transforms/stage_b/        # Team tự viết business logic ở đây
+    ├── data_quality/              # Team định nghĩa DQ rules ở đây
     ├── athena/                    # SQL views cho consumers
-    └── data/                      # Sample data hoac scripts
+    └── data/                      # Sample data hoặc scripts
 """
 import argparse
 import shutil
@@ -24,7 +24,7 @@ from pathlib import Path
 
 
 def onboard_domain(domain_name: str, owner: str, dataset: str, description: str = ""):
-    """Tao domain folder, generate config.yaml va stage_a boilerplate code."""
+    """Tạo domain folder, generate config.yaml và stage_a boilerplate code."""
     template_dir = Path(__file__).parent
     domains_dir = template_dir.parent
     target_dir = domains_dir / domain_name

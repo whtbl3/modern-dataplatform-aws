@@ -1,8 +1,8 @@
 version: 0.2
 
 # BuildSpec cho CDK Pipelines Synth step.
-# CDK Pipelines tu dong chay file nay trong Synth stage.
-# Output: cdk.out/ directory chua CloudFormation templates cho tat ca environments.
+# CDK Pipelines tự động chạy file này trong Synth stage.
+# Output: cdk.out/ directory chứa CloudFormation templates cho tất cả environments.
 
 phases:
   install:

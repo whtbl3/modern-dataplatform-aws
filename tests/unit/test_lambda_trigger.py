@@ -1,4 +1,4 @@
-"""Unit tests for the pipeline trigger Lambda function."""
+"""Unit tests cho Lambda function trigger pipeline."""
 import pytest
 import json
 import os

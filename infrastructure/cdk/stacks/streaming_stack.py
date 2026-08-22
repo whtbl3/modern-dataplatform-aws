@@ -1,14 +1,14 @@
 """
-Streaming Stack - Xu ly du lieu real-time tu Kinesis.
+Streaming Stack - Xử lý dữ liệu real-time từ Kinesis.
 
-Tao Kinesis Data Stream (on-demand mode, tu dong scale theo traffic)
-va Lambda processor doc records tu stream, ghi vao S3 raw zone.
+Tạo Kinesis Data Stream (on-demand mode, tự động scale theo traffic)
+và Lambda processor đọc records từ stream, ghi vào S3 raw zone.
 
-On-demand mode: khong can provision shards, AWS tu scale.
-Lambda batch: gom 100 records hoac doi 60 giay (whichever comes first) roi xu ly 1 lan.
-Output: JSON files phan partition theo year/month/day/hour trong S3 raw zone.
+On-demand mode: không cần provision shards, AWS tự scale.
+Lambda batch: gom 100 records hoặc đợi 60 giây (whichever comes first) rồi xử lý 1 lần.
+Output: JSON files phân partition theo year/month/day/hour trong S3 raw zone.
 
-Use case: IoT events, clickstream, real-time transactions tu applications.
+Use case: IoT events, clickstream, real-time transactions từ applications.
 """
 from aws_cdk import (
     Stack,
@@ -23,7 +23,7 @@ from pathlib import Path
 
 
 class StreamingStack(Stack):
-    """Tao Kinesis stream va Lambda processor cho real-time ingestion."""
+    """Tạo Kinesis stream và Lambda processor cho real-time ingestion."""
 
     def __init__(
         self,

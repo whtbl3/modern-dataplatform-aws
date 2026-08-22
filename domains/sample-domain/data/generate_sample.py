@@ -1,16 +1,16 @@
 """
-Sample Data Generator - Tao du lieu e-commerce gia de test pipeline.
+Sample Data Generator - Tạo dữ liệu e-commerce giả để test pipeline.
 
-Tao file orders.csv voi 1000 don hang ngau nhien gom:
+Tạo file orders.csv với 1000 đơn hàng ngẫu nhiên gồm:
 order_id, order_date, customer_id, category, product_name,
 quantity, unit_price, total_amount, region, payment_method.
 
-Dung de:
-- Test pipeline end-to-end local (upload CSV vao S3 raw, xem pipeline chay)
-- Validate data quality rules (du lieu dung format, dung range)
-- Demo cho stakeholders truoc khi dung du lieu that
+Dùng để:
+- Test pipeline end-to-end local (upload CSV vào S3 raw, xem pipeline chạy)
+- Validate data quality rules (dữ liệu đúng format, đúng range)
+- Demo cho stakeholders trước khi dùng dữ liệu thật
 
-Chay: uv run python domains/sample-domain/data/generate_sample.py
+Chạy: uv run python domains/sample-domain/data/generate_sample.py
 """
 import csv
 import random
@@ -25,7 +25,7 @@ OUTPUT_DIR = Path(__file__).parent
 
 
 def generate_orders(num_records: int = 1000) -> list[dict]:
-    """Tao danh sach orders ngau nhien trong khoang 1 nam (2024)."""
+    """Tạo danh sách orders ngẫu nhiên trong khoảng 1 năm (2024)."""
     start_date = date(2024, 1, 1)
     records = []
 
@@ -52,7 +52,7 @@ def generate_orders(num_records: int = 1000) -> list[dict]:
 
 
 def write_csv(records: list[dict], filename: str = "orders.csv"):
-    """Ghi danh sach records ra file CSV (san sang upload len S3)."""
+    """Ghi danh sách records ra file CSV (sẵn sàng upload lên S3)."""
     filepath = OUTPUT_DIR / filename
     with open(filepath, "w", newline="") as f:
         writer = csv.DictWriter(f, fieldnames=records[0].keys())

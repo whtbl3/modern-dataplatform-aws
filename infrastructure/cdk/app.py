@@ -2,18 +2,18 @@
 """
 CDK Application Entry Point - Modern Data Platform on AWS.
 
-Hai modes van hanh:
+Hai modes vận hành:
 
-1. PIPELINE MODE (mac dinh, dung trong CI/CD):
-   Deploy CICDStack - mot self-mutating CDK Pipeline tu dong deploy
-   toan bo platform qua 3 environments: Dev -> Staging -> Prod.
-   Pipeline tu update chinh no khi code thay doi.
+1. PIPELINE MODE (mặc định, dùng trong CI/CD):
+   Deploy CICDStack - một self-mutating CDK Pipeline tự động deploy
+   toàn bộ platform qua 3 environments: Dev → Staging → Prod.
+   Pipeline tự update chính nó khi code thay đổi.
 
 2. STANDALONE MODE (context env=dev/staging/prod):
-   Deploy tung stack rieng le cho 1 environment cu the.
-   Dung khi can debug hoac deploy thu cong lan dau (bootstrap).
+   Deploy từng stack riêng lẻ cho 1 environment cụ thể.
+   Dùng khi cần debug hoặc deploy thủ công lần đầu (bootstrap).
 
-Chay:
+Chạy:
   Pipeline mode: cdk deploy DataPlatform-CICD
   Standalone:    cdk synth --context env=dev
 """

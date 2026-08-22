@@ -1,28 +1,28 @@
-# Environment Configs
+# Cấu hình theo môi trường
 
-## What is this?
+## Đây là gì?
 
-YAML files chua cau hinh rieng cho moi environment (dev, staging, prod). Cung 1 CDK code nhung deploy khac nhau tuy moi truong.
+YAML files chứa cấu hình riêng cho mỗi environment (dev, staging, prod). Cùng 1 CDK code nhưng deploy khác nhau tuỳ môi trường.
 
-## What problem does it solve?
+## Giải quyết vấn đề gì?
 
-- **Dev re hon**: Dev dung it workers (G.1X, 2 workers) --> chi phi thap khi test
-- **Prod manh hon**: Prod dung nhieu workers (G.2X, 10 workers) --> xu ly data lon nhanh
-- **Tach biet alert**: Dev alert gui cho dev team, Prod alert gui cho oncall
-- **Mot code base**: Khong can maintain 3 ban code khac nhau cho 3 environments
+- **Dev rẻ hơn**: Dev dùng ít workers (G.1X, 2 workers) → chi phí thấp khi test
+- **Prod mạnh hơn**: Prod dùng nhiều workers (G.2X, 10 workers) → xử lý data lớn nhanh
+- **Tách biệt alert**: Dev alert gửi cho dev team, Prod alert gửi cho oncall
+- **Một code base**: Không cần maintain 3 bản code khác nhau cho 3 environments
 
-## How does it work?
+## Hoạt động như thế nào?
 
-CDK doc `env` context variable, chon config tuong ung, truyen vao cac stacks.
+CDK đọc `env` context variable, chọn config tương ứng, truyền vào các stacks.
 
 ```python
-cdk deploy --context env=dev   # --> doc dev.yaml
-cdk deploy --context env=prod  # --> doc prod.yaml
+cdk deploy --context env=dev   # → đọc dev.yaml
+cdk deploy --context env=prod  # → đọc prod.yaml
 ```
 
 ## Files
 
-| File | Environment | Dac diem |
+| File | Environment | Đặc điểm |
 |------|-------------|----------|
-| `dev.yaml` | Development | Workers nho, alert gui dev team |
-| `prod.yaml` | Production | Workers lon, alert gui oncall team |
+| `dev.yaml` | Development | Workers nhỏ, alert gửi dev team |
+| `prod.yaml` | Production | Workers lớn, alert gửi oncall team |

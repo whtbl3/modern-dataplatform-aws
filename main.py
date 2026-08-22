@@ -1,14 +1,14 @@
 """
 Modern Data Platform on AWS - Project entry point.
 
-File nay cung cap huong dan nhanh cho developer moi.
-Platform thuc su duoc deploy qua CDK (infrastructure/cdk/app.py),
-khong phai qua file nay.
+File này cung cấp hướng dẫn nhanh cho developer mới.
+Platform thực sự được deploy qua CDK (infrastructure/cdk/app.py),
+không phải qua file này.
 """
 
 
 def main():
-    """In huong dan su dung co ban cua project."""
+    """In hướng dẫn sử dụng cơ bản của project."""
     print("Modern Data Platform on AWS")
     print("=" * 40)
     print()

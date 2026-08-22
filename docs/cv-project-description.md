@@ -86,6 +86,338 @@ Thiết kế và triển khai Modern Data Platform theo các nguyên tắc:
 | Infrastructure reproducibility | Không | 100% IaC, deploy lại bất cứ lúc nào |
 | Rollback capability | Panic, fix forward | Tự động (CloudFormation) hoặc git revert |
 
+### Phân tích 5V → Quyết định chọn Technology Stack
+
+Mọi quyết định công nghệ trong platform đều xuất phát từ phân tích đặc điểm dữ liệu theo mô hình **5V of Big Data**:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         5V ANALYSIS → TECHNOLOGY DECISIONS                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     │
+│  │ VOLUME  │   │VELOCITY │   │ VARIETY │   │VERACITY │   │  VALUE  │     │
+│  │ Khối    │   │ Tốc độ  │   │ Đa dạng │   │Độ tin   │   │ Giá trị │     │
+│  │ lượng   │   │         │   │         │   │ cậy     │   │         │     │
+│  └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘     │
+│       │              │              │              │              │          │
+│       ▼              ▼              ▼              ▼              ▼          │
+│   S3 + Glue     Kinesis +      Iceberg +     Data Quality   Athena +       │
+│   (scale to     EventBridge    Glue ETL      (DQDL rules)   QuickSight     │
+│    petabytes)   (real-time)    (any format)   (validate)    (self-service)  │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+#### ① VOLUME (Khối lượng) → Chọn S3 + Glue + Athena
+
+| Đặc điểm data | Con số cụ thể | Yêu cầu | Giải pháp |
+|---------------|---------------|----------|-----------|
+| Đơn hàng/tháng | 200,000+ records | Lưu trữ lâu dài, rẻ | S3 ($0.023/GB/tháng) |
+| Tăng trưởng | ~30% YoY | Scale không cần re-architect | S3 unlimited + Glue auto-scale workers |
+| Lịch sử | Giữ 3+ năm | Query historical data | Iceberg partition by year (scan ít) |
+| Aggregate output | ~6,000 records/tháng | Query nhanh | Athena scan ~MB thay vì GB |
+
+**Tại sao KHÔNG chọn:**
+- ❌ RDS/PostgreSQL: giới hạn vài TB, scale vertical đắt, không partition tốt cho analytics
+- ❌ DynamoDB: tốt cho key-value lookup, tệ cho aggregate queries (full table scan)
+- ❌ Redshift: tốt nhưng over-kill cho volume này, có minimum cost kể cả khi idle
+
+**Tại sao chọn S3 + Glue:**
+- ✅ S3: unlimited storage, $0.023/GB, lifecycle policies tự xoá data cũ
+- ✅ Glue: serverless Spark, chỉ trả khi chạy, auto-scale workers theo data size
+- ✅ Athena: scan-based pricing ($5/TB scanned), partition pruning giảm cost 90%
+
+#### ② VELOCITY (Tốc độ) → Chọn Kinesis + EventBridge + Lambda
+
+| Đặc điểm | Con số | Yêu cầu | Giải pháp |
+|-----------|--------|----------|-----------|
+| Batch ingestion | 1 file/ngày (15K records) | Trigger pipeline tự động | EventBridge + Lambda |
+| Streaming events | 3,000+ events/giờ (peak) | Latency < 5 giây | Kinesis on-demand |
+| Processing window | 100 records hoặc 60 giây | Micro-batch hiệu quả | Lambda batch config |
+| Pipeline E2E | Upload → query-ready | < 15 phút | Step Functions orchestration |
+
+**Tại sao KHÔNG chọn:**
+- ❌ Apache Kafka (MSK): cần manage cluster, overkill cho 3K events/giờ, tốn tiền khi idle
+- ❌ SQS: không có replay, không có ordering guarantee, khó fan-out
+- ❌ Cron job polling S3: delay cao (phút), miss files, không event-driven
+
+**Tại sao chọn Kinesis + EventBridge:**
+- ✅ Kinesis on-demand: auto-scale, không cần provision shards, replay 24h
+- ✅ EventBridge: native S3 integration, content-based filtering, zero cost khi idle
+- ✅ Lambda: cold start < 1s, pay-per-invocation, perfect cho lightweight trigger
+
+#### ③ VARIETY (Đa dạng) → Chọn Iceberg + Glue ETL + 4-zone architecture
+
+| Đặc điểm | Ví dụ cụ thể | Yêu cầu | Giải pháp |
+|-----------|-------------|----------|-----------|
+| Source formats | CSV, JSON, streaming JSON | Ingest bất kỳ format nào | S3 raw zone (schema-on-read) |
+| Schema changes | Thêm cột "discount" tháng sau | Không break pipeline cũ | Iceberg schema evolution |
+| Multiple domains | Sales, Marketing, Operations | Mỗi domain format khác | Domain-based folder structure |
+| Output consumers | SQL analysts, BI tools, ML | 1 data phục vụ nhiều mục đích | Curated zone (Iceberg) + Athena |
+
+**Tại sao KHÔNG chọn:**
+- ❌ Single database (Redshift): buộc phải define schema trước, mỗi thay đổi = migration
+- ❌ Plain Parquet trên S3: không có schema evolution, partition thay đổi = rewrite toàn bộ
+- ❌ Delta Lake: tied vào Databricks ecosystem, Glue hỗ trợ Iceberg native tốt hơn
+
+**Tại sao chọn Iceberg:**
+- ✅ Schema evolution: thêm/đổi/xoá cột mà consumer cũ vẫn chạy
+- ✅ Hidden partitioning: engine tự partition, user query không cần biết structure
+- ✅ Time-travel: query version cũ khi transform mới bị lỗi
+- ✅ ACID: multiple writers không corrupt data
+
+#### ④ VERACITY (Độ tin cậy) → Chọn Glue Data Quality + Alert Lambda + Dedup
+
+| Đặc điểm | Rủi ro nếu không xử lý | Yêu cầu | Giải pháp |
+|-----------|------------------------|----------|-----------|
+| Duplicate orders | Đếm doanh thu 2 lần | Dedup trước khi aggregate | Stage A: dropDuplicates("order_id") |
+| Null values | Aggregate sai (NaN) | Loại bỏ hoặc default | Stage A: filter order_id NOT NULL |
+| Invalid range | amount = -999 (lỗi source) | Reject records bất hợp lý | DQDL: ColumnValues "amount" > 0 |
+| Wrong enum | category = "Elctronics" (typo) | Validate domain values | DQDL: ColumnValues "category" in [...] |
+| Missing data | 50% records thiếu region | Phát hiện sớm, alert | DQDL: Completeness "region" >= 0.95 |
+| Schema drift | Source thêm cột, đổi tên | Không crash pipeline | Iceberg schema evolution + Stage A enforce |
+
+**Tại sao KHÔNG chọn:**
+- ❌ Validate ở application layer: data đã vào lake rồi mới phát hiện lỗi
+- ❌ Custom Python validation code: khó maintain, không declarative, mỗi domain viết khác
+- ❌ Block pipeline khi DQ fail: data vẫn cần vào raw zone (source of truth), chỉ chặn ở curated
+
+**Tại sao chọn DQDL + alert approach:**
+- ✅ Declarative rules: dễ đọc, dễ review, domain team tự viết
+- ✅ Chạy SAU Stage A: data luôn vào raw (không mất), DQ check trước curated
+- ✅ Alert (không block): team tự đánh giá severity, quyết định action
+- ✅ Version-controlled: rules nằm trong git, thay đổi qua PR review
+
+#### ⑤ VALUE (Giá trị) → Chọn Athena + QuickSight + Self-service
+
+| Đặc điểm | Business need | Yêu cầu | Giải pháp |
+|-----------|-------------|----------|-----------|
+| Ad-hoc queries | CEO hỏi bất kỳ lúc nào | Query không cần engineer | Athena (SQL tự phục vụ) |
+| Dashboards | Marketing cần visual | Tự tạo/sửa dashboard | QuickSight connect Athena |
+| Cost efficiency | Không query 24/7 | Chỉ trả khi dùng | Athena pay-per-scan + Glue pay-per-run |
+| Time to insight | "Biết ngay, hành động ngay" | < 30 giây từ question → answer | Pre-aggregated views + Athena |
+| Multi-team access | 3 teams dùng chung | Governance, không conflict | Lake Formation + domain isolation |
+
+**Tại sao KHÔNG chọn:**
+- ❌ Jupyter notebooks: cần code, không self-service cho business
+- ❌ Redshift always-on: trả $0.25/giờ kể cả khi không ai query
+- ❌ Export Excel hàng tháng: stale data, không interactive, không reproducible
+
+**Tại sao chọn Athena + QuickSight:**
+- ✅ Athena: $5/TB scanned, 0 cost khi idle, standard SQL, Iceberg native
+- ✅ QuickSight: business tự tạo dashboard, auto-refresh, share trong org
+- ✅ 10 GB scan limit: tự động chặn query quét quá nhiều (cost governance)
+- ✅ Pre-built views: business không cần viết SQL phức tạp
+
+#### Tổng hợp: 5V → Technology Map
+
+```
+┌──────────────┬──────────────────────────────┬────────────────────────────────┐
+│      V       │     Thách thức cụ thể        │    Công nghệ đã chọn           │
+├──────────────┼──────────────────────────────┼────────────────────────────────┤
+│ VOLUME       │ 200K+ records/tháng,         │ S3 (storage) + Glue (compute) │
+│              │ tăng 30% YoY, giữ 3 năm     │ + Athena (query)               │
+├──────────────┼──────────────────────────────┼────────────────────────────────┤
+│ VELOCITY     │ Batch hàng ngày +            │ EventBridge + Lambda (batch)   │
+│              │ streaming 3K events/giờ      │ + Kinesis (streaming)          │
+├──────────────┼──────────────────────────────┼────────────────────────────────┤
+│ VARIETY      │ CSV + JSON + streaming,      │ Iceberg (unified format)       │
+│              │ schema thay đổi theo thời    │ + 4-zone lake architecture     │
+│              │ gian, nhiều domains          │ + Glue ETL (transform any)     │
+├──────────────┼──────────────────────────────┼────────────────────────────────┤
+│ VERACITY     │ Duplicates, nulls, invalid   │ Glue DQ (DQDL rules)          │
+│              │ ranges, schema drift         │ + Stage A dedup/validate       │
+│              │                              │ + SNS alerts                   │
+├──────────────┼──────────────────────────────┼────────────────────────────────┤
+│ VALUE        │ 3 teams cần insight nhanh,   │ Athena (self-service SQL)      │
+│              │ tự phục vụ, cost-effective   │ + QuickSight (dashboards)      │
+│              │                              │ + Pre-aggregated views         │
+└──────────────┴──────────────────────────────┴────────────────────────────────┘
+```
+
+---
+
+### Data Model: Tại sao chọn Star Schema trên Data Lake (Hybrid approach)
+
+#### Các lựa chọn data model
+
+| Model | Mô tả | Ưu điểm | Nhược điểm |
+|-------|--------|---------|------------|
+| **Flat denormalized** | 1 bảng chứa tất cả | Đơn giản, dễ query | Redundancy cao, scan nhiều |
+| **Star schema** | Fact table + dimension tables | Query nhanh, dễ hiểu | Cần maintain dimensions |
+| **Data Vault** | Hub + Satellite + Link | Audit trail, historized | Quá phức tạp cho 1 domain |
+| **One Big Table (OBT)** | Pre-join tất cả vào 1 bảng | Cực nhanh cho BI | Không flexible khi thêm dimension |
+
+#### Quyết định: Star Schema đơn giản hoá (2 layers)
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                    DATA MODEL ARCHITECTURE                                    │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  STAGING LAYER (orders_staging)          CURATED LAYER (sales_summary)       │
+│  ─────────────────────────────          ──────────────────────────────      │
+│  = Transaction-level detail              = Pre-aggregated fact table          │
+│  = Source of truth (deduped)             = Optimized cho queries              │
+│                                                                              │
+│  ┌─────────────────────────┐            ┌─────────────────────────────┐     │
+│  │  orders_staging         │            │  sales_summary              │     │
+│  │  (Iceberg table)        │            │  (Iceberg table)            │     │
+│  ├─────────────────────────┤            ├─────────────────────────────┤     │
+│  │  order_id        PK     │            │  order_date         PK(1)  │     │
+│  │  order_date             │──────┐     │  category           PK(2)  │     │
+│  │  customer_id            │      │     │  region             PK(3)  │     │
+│  │  category               │      │     ├─────────────────────────────┤     │
+│  │  product_name           │      │     │  order_count        metric │     │
+│  │  quantity               │      ├────>│  total_quantity     metric │     │
+│  │  unit_price             │      │     │  total_revenue      metric │     │
+│  │  total_amount           │      │     │  avg_order_value    metric │     │
+│  │  region                 │      │     │  unique_customers   metric │     │
+│  │  payment_method         │      │     │  cumulative_revenue metric │     │
+│  │  ingested_at            │      │     ├─────────────────────────────┤     │
+│  └─────────────────────────┘      │     │  year               part.  │     │
+│                                    │     │  month              part.  │     │
+│                                    │     │  processed_at       audit  │     │
+│                 Stage B            │     └─────────────────────────────┘     │
+│               (GROUP BY +          │                                         │
+│                window func)        │     Partition: year(order_date)         │
+│                                    │     Granularity: 1 row per              │
+│                                    │       (date × category × region)       │
+│                                    │                                         │
+└────────────────────────────────────┴─────────────────────────────────────────┘
+```
+
+#### Tại sao chọn model này?
+
+**1. Tại sao 2 layers thay vì 1?**
+
+```
+Nếu chỉ có orders_staging (raw detail):
+  • Query "doanh thu theo category": scan 200K records → chậm, đắt
+  • Mỗi query phải GROUP BY lại → duplicate compute
+  • Business user phải viết SQL phức tạp
+
+Với sales_summary (pre-aggregated):
+  • Cùng query: scan 420 records (30 ngày × 5 cat × ~3 region) → 1000x ít hơn
+  • Metrics tính sẵn → query chỉ cần SELECT + WHERE
+  • Business user chọn Athena view → có kết quả ngay
+```
+
+**2. Tại sao Star Schema đơn giản hoá (không có dimension tables riêng)?**
+
+```
+Star Schema truyền thống:
+  fact_sales ──→ dim_category (category_id, category_name, department)
+             ──→ dim_region (region_id, region_name, country, timezone)
+             ──→ dim_date (date_id, year, quarter, month, week, day_of_week)
+             ──→ dim_customer (customer_id, segment, tier, registration_date)
+
+Project này chọn SIMPLIFIED star:
+  sales_summary chứa luôn category, region, date (không tách dimension)
+```
+
+| Lý do | Giải thích |
+|-------|-----------|
+| Số lượng dimensions ít | Chỉ 5 categories, 4 regions → không cần bảng riêng |
+| Dimensions ít thay đổi | Category list cố định, region cố định |
+| Query simplicity | JOIN giữa fact + dimensions tốn thêm latency trên Athena |
+| Data lake ≠ Data warehouse | Athena tối ưu cho scan flat tables, không phải star join |
+| Team size nhỏ | Không cần governance phức tạp cho dimension management |
+
+**Khi nào CẦN tách dimension tables:**
+- Khi category có 500+ giá trị và metadata phong phú (hierarchy, manager, budget)
+- Khi cần SCD Type 2 (slowly changing dimensions) - ví dụ: customer đổi tier
+- Khi nhiều fact tables cùng reference 1 dimension (reuse)
+
+**3. Tại sao partition theo year(order_date)?**
+
+```
+Không partition:
+  Query "doanh thu tháng 8/2024" → scan TOÀN BỘ bảng (3 năm data)
+  Cost: $5/TB × toàn bộ data
+
+Partition theo year:
+  Query "doanh thu tháng 8/2024" → scan CHỈ partition year=2024
+  Cost: $5/TB × 1/3 data = tiết kiệm 66%
+
+Tại sao year thay vì month hoặc day?
+  • month: quá nhiều partitions (36+ cho 3 năm) → overhead
+  • day: 1000+ partitions → Glue Catalog chậm, small files problem
+  • year: 3-4 partitions, mỗi partition đủ lớn (>128MB), scan cost hợp lý
+```
+
+**4. Tại sao giữ cả staging VÀ curated (không chỉ curated)?**
+
+```
+staging (orders_staging):
+  • Source of truth: mọi record gốc (sau dedup) đều ở đây
+  • Dùng khi: cần drill-down chi tiết 1 đơn hàng cụ thể
+  • Dùng khi: Stage B logic thay đổi → chạy lại từ staging (không cần re-ingest)
+  • Dùng khi: debug "tại sao doanh thu hôm qua giảm?" → xem từng order
+
+curated (sales_summary):
+  • Optimized cho analytics: pre-aggregated, partitioned
+  • Dùng khi: dashboard daily/weekly/monthly
+  • Dùng khi: business query ad-hoc (nhanh, rẻ)
+  • 1000x ít records hơn staging → query nhanh hơn rất nhiều
+```
+
+**5. Tại sao có cumulative_revenue (window function)?**
+
+```sql
+-- Không có cumulative_revenue:
+-- Business phải viết:
+SELECT order_date, category, region,
+       SUM(total_revenue) OVER (
+         PARTITION BY category, region
+         ORDER BY order_date
+         ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+       ) as cumulative
+FROM sales_summary;
+-- → Phức tạp, dễ sai, mỗi lần query phải tính lại
+
+-- Có cumulative_revenue (đã tính sẵn trong Stage B):
+SELECT order_date, category, region, cumulative_revenue
+FROM sales_summary
+WHERE category = 'Electronics' AND region = 'us-east';
+-- → Đơn giản, nhanh, business tự làm được
+```
+
+#### Data Flow qua các layers
+
+```
+┌──────────┐     ┌──────────────┐     ┌───────────────┐     ┌──────────────┐
+│  RAW     │     │   STAGING    │     │   CURATED     │     │  ANALYTICS   │
+│  (S3)    │────>│  (Iceberg)   │────>│   (Iceberg)   │────>│   (Views)    │
+└──────────┘     └──────────────┘     └───────────────┘     └──────────────┘
+                                                                     │
+ orders.csv       orders_staging       sales_summary          Athena views
+ (as-is from      (deduped,            (aggregated,           (pre-written
+  source)          validated,            partitioned,           SQL cho
+                   typed)                metrics sẵn)           business)
+
+ Schema:          Schema:               Schema:               Output:
+ Không enforce    Enforced              Business metrics      Kết quả trực tiếp
+                  (StructType)          (đã tính toán)        (cho dashboard)
+
+ Dùng bởi:       Dùng bởi:             Dùng bởi:            Dùng bởi:
+ Không ai query  Data Engineer         Everyone              Business users
+ trực tiếp       (debug, re-process)   (query, dashboard)    (QuickSight)
+```
+
+#### So sánh với các approach khác
+
+| Approach | Khi nào phù hợp | Tại sao KHÔNG chọn cho project này |
+|----------|-----------------|-----------------------------------|
+| **Data Vault** | Enterprise với 100+ sources, cần full audit history, regulatory compliance nặng | Quá phức tạp cho 1 domain, team nhỏ, overhead maintain Hub/Sat/Link |
+| **One Big Table** | BI team chỉ cần 1 bảng duy nhất, data ít thay đổi structure | Không flexible: thêm dimension = rebuild toàn bộ bảng |
+| **Medallion (Bronze/Silver/Gold)** | Databricks ecosystem, nhiều layers transform | Tương tự 4-zone approach, nhưng naming khác (raw=bronze, staging=silver, curated=gold) |
+| **Kimball Star Schema** | Data warehouse truyền thống (Redshift, Snowflake) | Athena không optimize cho multi-table joins, data lake favor flat/wide tables |
+| **Activity Schema** | Event-driven analytics (Segment, Amplitude style) | Project này focus vào transactional data, không phải event stream analytics |
+
+---
+
 ### Chi tiết kỹ thuật (dùng khi phỏng vấn)
 
 **1. Tại sao chọn Iceberg thay vì Parquet/Hive?**

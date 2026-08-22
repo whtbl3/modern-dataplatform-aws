@@ -1,0 +1,43 @@
+# Domain Onboarding Template
+# Copy this directory and fill in the values below to onboard a new domain.
+
+domain:
+  name: "{{ domain_name }}"
+  owner: "{{ team_email }}"
+  description: "{{ domain_description }}"
+
+datasets:
+  - name: "{{ dataset_name }}"
+    format: csv           # csv, json, parquet
+    source_prefix: "{{ domain_name }}/{{ dataset_name }}/"
+    schema_enforcement: strict    # strict or permissive
+    partition_keys:
+      - year
+      - month
+
+pipeline:
+  schedule: "cron(0 7 * * ? *)"    # Daily at 7am UTC
+  timeout_hours: 2
+  stage_a:
+    worker_type: G.1X
+    number_of_workers: 2
+  stage_b:
+    worker_type: G.1X
+    number_of_workers: 4
+
+data_quality:
+  enabled: true
+  rules:
+    - IsComplete "{{ primary_key }}"
+    - IsUnique "{{ primary_key }}"
+    - RowCount > 0
+
+governance:
+  classification: internal         # public, internal, confidential, restricted
+  pii_scanning: true
+  retention_days: 365
+  access_control:
+    - role: "{{ domain_name }}-analysts"
+      permissions: [SELECT]
+    - role: "{{ domain_name }}-engineers"
+      permissions: [SELECT, INSERT, UPDATE, DELETE]

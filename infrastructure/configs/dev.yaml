@@ -1,0 +1,23 @@
+environment: dev
+region: us-east-1
+
+storage:
+  raw_bucket_prefix: data-platform-raw
+  staging_bucket_prefix: data-platform-staging
+  curated_bucket_prefix: data-platform-curated
+  analytics_bucket_prefix: data-platform-analytics
+
+transform:
+  stage_a:
+    worker_type: G.1X
+    number_of_workers: 2
+  stage_b:
+    worker_type: G.1X
+    number_of_workers: 2
+
+orchestration:
+  schedule: "cron(0 7 * * ? *)"
+  timeout_hours: 2
+
+monitoring:
+  alert_email: team-dev@company.com

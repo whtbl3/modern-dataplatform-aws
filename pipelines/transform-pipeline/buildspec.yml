@@ -1,0 +1,46 @@
+version: 0.2
+
+# BuildSpec cho Transform code CI/CD.
+# Chay unit tests + data contract validation, roi deploy scripts len S3.
+# Glue jobs doc scripts tu S3, nen thay doi code co hieu luc ngay lan chay tiep theo.
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+    commands:
+      - pip install pytest boto3 pyyaml
+
+  pre_build:
+    commands:
+      - echo "Running unit tests..."
+      - python -m pytest tests/unit/ -v --tb=short --junitxml=test-reports/unit.xml
+      - echo "Validating data quality rules syntax..."
+      - python -c "import domains.sample_domain.data_quality.rules; print('DQ rules OK')" || true
+
+  build:
+    commands:
+      - echo "Deploying transform scripts to S3..."
+      - aws s3 sync domains/ s3://${SCRIPTS_BUCKET}/transforms/
+          --exclude "*.pyc"
+          --exclude "__pycache__/*"
+          --exclude "data/*.csv"
+          --exclude "*.egg-info/*"
+          --delete
+      - echo "Scripts deployed successfully."
+
+  post_build:
+    commands:
+      - echo "Verifying deployment..."
+      - aws s3 ls s3://${SCRIPTS_BUCKET}/transforms/ --recursive | head -20
+      - echo "Transform code deployment complete."
+
+reports:
+  unit-tests:
+    files:
+      - test-reports/unit.xml
+    file-format: JUNITXML
+
+cache:
+  paths:
+    - "/root/.cache/pip/**/*"

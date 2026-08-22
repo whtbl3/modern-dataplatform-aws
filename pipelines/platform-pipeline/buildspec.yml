@@ -1,0 +1,47 @@
+version: 0.2
+
+# BuildSpec cho CDK Pipelines Synth step.
+# CDK Pipelines tu dong chay file nay trong Synth stage.
+# Output: cdk.out/ directory chua CloudFormation templates cho tat ca environments.
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.12
+      nodejs: 20
+    commands:
+      - npm install -g aws-cdk
+      - pip install -r requirements.txt
+
+  pre_build:
+    commands:
+      - echo "Running unit tests..."
+      - python -m pytest tests/unit/ -v --tb=short --junitxml=test-reports/unit.xml
+      - echo "Running linter..."
+      - pip install ruff
+      - ruff check domains/ infrastructure/cdk/stacks/ --select E,W,F
+
+  build:
+    commands:
+      - echo "Synthesizing CDK stacks..."
+      - cd infrastructure/cdk && cdk synth --context env=${ENVIRONMENT:-dev}
+
+  post_build:
+    commands:
+      - echo "Synth complete. Stacks ready for deployment."
+
+reports:
+  unit-tests:
+    files:
+      - test-reports/unit.xml
+    file-format: JUNITXML
+
+artifacts:
+  base-directory: infrastructure/cdk/cdk.out
+  files:
+    - "**/*"
+
+cache:
+  paths:
+    - "/root/.cache/pip/**/*"
+    - "node_modules/**/*"

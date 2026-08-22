@@ -2,6 +2,408 @@
 
 ---
 
+## Quá trình phát triển: Từ yêu cầu khách hàng → Production
+
+### Tổng quan quy trình
+
+```
+┌────────────────────────────────────────────────────────────────────────────┐
+│                 DATA PLATFORM DEVELOPMENT LIFECYCLE                          │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
+│  Phase 1          Phase 2           Phase 3          Phase 4               │
+│  DISCOVERY        DESIGN            BUILD            OPERATE               │
+│                                                                             │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐            │
+│  │ Gather   │    │ Architect│    │ Implement│    │ Deploy & │            │
+│  │ Require- │───>│ & Model  │───>│ & Test   │───>│ Monitor  │            │
+│  │ ments    │    │          │    │          │    │          │            │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘            │
+│                                                                             │
+│  • Stakeholder    • 5V analysis    • IaC (CDK)     • CI/CD pipeline       │
+│    interviews     • Tech selection • ETL code       • Observability        │
+│  • Pain points    • Data modeling  • DQ rules       • Incident response    │
+│  • SLA/NFR        • Architecture   • Unit tests     • Cost monitoring      │
+│  • Data audit     • Trade-offs     • Integration    • Iterate              │
+│                                                                             │
+└────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+### Phase 1: DISCOVERY — Thu thập & Phân tích yêu cầu
+
+#### Bước 1.1: Stakeholder Interviews (Phỏng vấn các bên liên quan)
+
+Gặp từng team để hiểu pain points thực tế:
+
+| Stakeholder | Vai trò | Câu hỏi đặt ra | Pain point phát hiện |
+|-------------|---------|-----------------|---------------------|
+| CEO | Ra quyết định | "Khi nào ông cần xem doanh thu? Format nào?" | "Phải chờ 3 ngày, mỗi lần số khác nhau" |
+| Head of Marketing | Lập campaign | "Làm sao biết category nào trending?" | "Nhờ engineer mất 1 tuần, data đã stale" |
+| Operations Manager | Vận hành | "Phát hiện vấn đề khu vực thế nào?" | "Cuối tháng mới biết, đã mất revenue" |
+| Finance Lead | Báo cáo tài chính | "Revenue report tạo ra sao?" | "3 nguồn, merge Excel, sai số 5%" |
+| Data Engineer | Maintain pipeline | "Dành bao lâu cho ad-hoc queries?" | "60% thời gian, không build được gì mới" |
+| New team (Analytics) | Muốn onboard | "Bao lâu để team mới dùng data?" | "2 tuần chờ setup, ticket qua IT" |
+
+#### Bước 1.2: Requirements Documentation
+
+**Functional Requirements (FR):**
+
+| ID | Yêu cầu | Priority | Stakeholder |
+|----|---------|----------|-------------|
+| FR-1 | Tự động nạp data từ source (CSV) hàng ngày, không cần manual | Must | All |
+| FR-2 | Loại bỏ duplicate, validate schema trước khi lưu | Must | Engineer, Finance |
+| FR-3 | Aggregate doanh thu theo ngày/category/region | Must | CEO, Marketing |
+| FR-4 | Business tự query bằng SQL, không cần engineer | Must | CEO, Marketing, Ops |
+| FR-5 | Alert khi data quality fail | Should | Engineer, Ops |
+| FR-6 | Streaming real-time cho clickstream events | Should | Marketing, Product |
+| FR-7 | Team mới self-service onboard (< 1 ngày) | Should | Analytics team |
+| FR-8 | Dashboard tự động refresh hàng ngày | Could | CEO, Marketing |
+
+**Non-Functional Requirements (NFR):**
+
+| ID | Yêu cầu | Target | Lý do |
+|----|---------|--------|-------|
+| NFR-1 | End-to-end latency (batch) | < 15 phút | CEO muốn xem data sáng hôm sau |
+| NFR-2 | Streaming latency | < 5 giây | Real-time campaign monitoring |
+| NFR-3 | Query response time | < 30 giây | Self-service phải nhanh |
+| NFR-4 | Availability | 99.9% | Business-critical reporting |
+| NFR-5 | Cost khi idle | ~$0 | Startup budget, trả khi dùng |
+| NFR-6 | Data retention | 3+ năm | Regulatory + trend analysis |
+| NFR-7 | Recovery (RPO/RTO) | RPO < 1 ngày, RTO < 1 giờ | Data không được mất |
+| NFR-8 | Security | Encryption + access control | PII compliance |
+
+#### Bước 1.3: Data Audit (Kiểm kê dữ liệu hiện tại)
+
+```
+Khảo sát: Dữ liệu nào đang có? Ở đâu? Format gì? Ai sở hữu?
+
+┌─────────────────────────────────────────────────────────────────────┐
+│ Data Source Inventory                                                │
+├──────────────┬───────────┬─────────────┬──────────┬────────────────┤
+│ Source       │ Format    │ Volume      │ Frequency│ Owner          │
+├──────────────┼───────────┼─────────────┼──────────┼────────────────┤
+│ POS system   │ CSV       │ 15K rows/day│ Daily    │ Operations     │
+│ Website      │ JSON event│ 3K events/hr│ Real-time│ Engineering    │
+│ Mobile app   │ JSON event│ 1K events/hr│ Real-time│ Engineering    │
+│ CRM export   │ CSV       │ 5K rows/week│ Weekly   │ Sales          │
+│ Payments     │ CSV       │ 15K rows/day│ Daily    │ Finance        │
+└──────────────┴───────────┴─────────────┴──────────┴────────────────┘
+
+Phát hiện:
+  • POS data có ~1% duplicates (network retry)
+  • Website events có ~3% invalid JSON (old client version)
+  • Không có ai validate data quality hiện tại
+  • Mỗi team export format khác nhau (date format, encoding)
+```
+
+#### Bước 1.4: Constraints & Assumptions
+
+| Loại | Nội dung |
+|------|----------|
+| **Budget** | Startup stage → serverless (pay-per-use), không mua reserved capacity |
+| **Team** | 1-2 data engineers, không có dedicated DevOps → cần automation cao |
+| **Timeline** | MVP trong 4 tuần, full platform 8 tuần |
+| **Cloud** | Đã dùng AWS cho application → stay in AWS ecosystem (tránh multi-cloud overhead) |
+| **Skills** | Team biết Python, SQL. Không biết Scala/Java → chọn PySpark |
+| **Compliance** | Encrypt at rest + transit. Chưa cần HIPAA/SOC2 nhưng prepare for future |
+
+---
+
+### Phase 2: DESIGN — Thiết kế kiến trúc
+
+#### Bước 2.1: Phân tích 5V → Chọn Technology Stack
+
+_(Chi tiết phần 5V analysis đã có phía dưới trong document)_
+
+Tóm tắt quy trình tư duy:
+
+```
+Requirements        5V Analysis              Technology Decision
+─────────────      ──────────────           ────────────────────
+
+FR-1: Auto ingest  VELOCITY: batch 1/day    → EventBridge + Lambda trigger
+                   + streaming 3K/hr        → Kinesis on-demand
+
+FR-2: Dedup +      VERACITY: 1% duplicates  → Glue PySpark (dropDuplicates)
+validate           + invalid ranges         → DQDL rules (declarative)
+
+FR-3: Aggregate    VOLUME: 200K → 6K rows   → Glue Stage B (GROUP BY)
+                   VARIETY: CSV in, SQL out  → Iceberg (unified format)
+
+FR-4: Self-query   VALUE: 3 teams, ad-hoc   → Athena (SQL, serverless)
+                   NFR-5: $0 khi idle       → pay-per-scan, not always-on
+
+FR-6: Streaming    VELOCITY: 3K events/hr   → Kinesis (auto-scale)
+                   NFR-2: < 5s latency      → Lambda micro-batch (60s window)
+
+NFR-5: Cost ~$0    VOLUME: moderate         → Serverless everything
+when idle          VELOCITY: bursty         → On-demand (Glue, Kinesis, Athena)
+```
+
+#### Bước 2.2: Architecture Design (High-Level)
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                    TARGET ARCHITECTURE                                │
+├─────────────────────────────────────────────────────────────────────┤
+│                                                                      │
+│  INGESTION        STORAGE         PROCESSING       SERVING          │
+│  ──────────      ─────────       ────────────     ────────          │
+│                                                                      │
+│  EventBridge ──> S3 Raw     ──>  Glue ETL    ──> Athena            │
+│  Lambda          (as-is)         (Stage A+B)      (SQL)            │
+│  Kinesis         S3 Staging      Step Functions   QuickSight       │
+│                  S3 Curated      (orchestrate)    (dashboard)       │
+│                  S3 Analytics                                        │
+│                                                                      │
+│  GOVERNANCE       QUALITY          OBSERVABILITY    DEPLOYMENT      │
+│  ──────────      ─────────        ──────────────   ────────────    │
+│                                                                      │
+│  Lake Formation  DQDL Rules       CloudWatch       CDK Pipelines   │
+│  Glue Catalog    Alert Lambda     SNS Alerts       (self-mutating) │
+│  Macie (PII)                      Dashboard        3 environments  │
+│                                                                      │
+└─────────────────────────────────────────────────────────────────────┘
+```
+
+#### Bước 2.3: Data Modeling
+
+_(Chi tiết phần Data Model đã có phía dưới trong document)_
+
+Quy trình chọn model:
+
+```
+Yêu cầu business                     Model decision
+──────────────────                   ────────────────
+
+"Query doanh thu theo category"  →   Cần aggregate table (không scan raw)
+"Drill-down từng đơn hàng"      →   Cần giữ staging (transaction-level)
+"Schema có thể thay đổi"        →   Cần Iceberg (schema evolution)
+"Team nhỏ, ít dimensions"       →   Simplified star (không cần dim tables)
+"3 năm historical data"         →   Partition by year (scan 1/3)
+"Revenue tích luỹ cho investor" →   Pre-compute cumulative (window func)
+```
+
+#### Bước 2.4: Trade-off Decisions Log
+
+| Quyết định | Lựa chọn A | Lựa chọn B | Chọn | Lý do |
+|-----------|------------|------------|------|-------|
+| ETL engine | Glue (PySpark) | Lambda (pandas) | Glue | 200K rows cần distributed processing, Lambda timeout 15m |
+| Orchestration | Step Functions | Airflow (MWAA) | Step Functions | Serverless, $0 idle, team nhỏ không muốn maintain |
+| Table format | Iceberg | Delta Lake | Iceberg | AWS native support tốt hơn, Glue + Athena integrate sẵn |
+| CI/CD | CDK Pipelines | GitHub Actions | CDK Pipelines | Self-mutating, native AWS, immutable artifacts |
+| Streaming | Kinesis | MSK (Kafka) | Kinesis | 3K events/hr quá nhỏ cho Kafka, Kinesis on-demand rẻ hơn |
+| Query engine | Athena | Redshift Serverless | Athena | Pay-per-scan phù hợp budget, ad-hoc pattern |
+| DQ approach | DQDL declarative | Custom Python | DQDL | Dễ maintain, domain team tự viết, version-controlled |
+| Deploy model | Multi-account | Single-account multi-env | Single-account | Đơn giản cho MVP, migrate sang multi-account sau |
+
+---
+
+### Phase 3: BUILD — Triển khai & Kiểm thử
+
+#### Bước 3.1: Infrastructure as Code
+
+```
+Tư duy tách stacks:
+
+  "Mỗi stack = 1 nhóm resources có lifecycle chung"
+
+  ┌────────────────────────────────────────────────────┐
+  │ Stack decomposition logic:                          │
+  │                                                     │
+  │ Q: Khi nào deploy cùng nhau?                       │
+  │ A: S3 buckets + IAM role → STORAGE stack            │
+  │                                                     │
+  │ Q: Ai depend vào ai?                               │
+  │ A: Transform cần Storage → Transform depends on     │
+  │    Storage, nhưng Monitoring độc lập                │
+  │                                                     │
+  │ Q: Team nào own?                                    │
+  │ A: Platform team: Storage, CICD, Monitoring         │
+  │    Domain team: Transform, DataQuality              │
+  │                                                     │
+  │ Q: Blast radius?                                    │
+  │ A: Sửa alarm không nên risk break S3 bucket        │
+  │    → Tách Monitoring riêng                          │
+  └────────────────────────────────────────────────────┘
+
+  Kết quả: 10 stacks, dependency graph rõ ràng
+```
+
+#### Bước 3.2: ETL Development (Transform code)
+
+```
+Phát triển theo Test-Driven Data Pipeline:
+
+  1. Viết DQ rules TRƯỚC (= acceptance criteria)
+     "order_id phải unique, amount phải > 0"
+
+  2. Viết unit tests cho logic transform
+     test_dedup: 2 records cùng id → chỉ giữ 1
+     test_null_filter: record thiếu id → loại bỏ
+     test_aggregation: 3 records → sum đúng
+
+  3. Implement Stage A + Stage B
+     Stage A: validate → dedup → type cast → write Iceberg
+     Stage B: read staging → GROUP BY → window func → write curated
+
+  4. Integration test (chạy với data thật trên AWS)
+     Upload sample CSV → verify pipeline end-to-end
+```
+
+#### Bước 3.3: Testing Strategy
+
+```
+                          ┌─────────────────────┐
+                          │ Production          │ ← Chỉ code đã qua TẤT CẢ layers
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────┴──────────┐
+                          │ Smoke Tests         │ ← Services tồn tại và respond?
+                          │ (post-staging)      │
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────┴──────────┐
+                          │ Integration Tests   │ ← Pipeline chạy end-to-end trên AWS?
+                          │ (post-dev deploy)   │
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────┴──────────┐
+                          │ Data Contract Tests │ ← DQ rules vẫn valid?
+                          │ (pre-staging)       │   Schema không bị break?
+                          └──────────┬──────────┘
+                                     │
+                          ┌──────────┴──────────┐
+                          │ Unit Tests          │ ← Logic đúng? Dedup OK?
+                          │ (pre-deploy, mọi    │   Aggregation đúng?
+                          │  commit)            │   25 tests, < 1 giây
+                          └─────────────────────┘
+
+Chi phí fix bug tăng dần theo layer → test nhiều ở dưới (shift-left)
+```
+
+#### Bước 3.4: Security Review
+
+| Layer | Kiểm tra | Implementation |
+|-------|---------|----------------|
+| Storage | Data encrypted at rest? | S3 SSE-S3 (default encryption) |
+| Storage | Public access blocked? | BlockPublicAccess.BLOCK_ALL |
+| Network | Data encrypted in transit? | HTTPS only (S3, Glue, Athena) |
+| IAM | Least privilege? | Mỗi service chỉ có quyền cần thiết |
+| Governance | Ai đọc được data nào? | Lake Formation (table/column-level) |
+| PII | Có data nhạy cảm không? | Macie scan raw + curated buckets |
+| Secrets | Credentials trong code? | Environment variables, không hard-code |
+| Audit | Ai làm gì khi nào? | CloudTrail + S3 access logging |
+
+---
+
+### Phase 4: OPERATE — Vận hành & Cải tiến
+
+#### Bước 4.1: Deployment Pipeline
+
+```
+Code commit → CDK Pipelines tự động:
+
+  ┌───────┐   ┌───────┐   ┌─────────┐   ┌─────────┐   ┌──────┐
+  │ Synth │──>│  Dev  │──>│ Staging │──>│Approval │──>│ Prod │
+  └───────┘   └───────┘   └─────────┘   └─────────┘   └──────┘
+      │            │            │                           │
+  Validate    Deploy +      Deploy +      Human         Deploy +
+  all stacks  integration   smoke tests   review        verification
+              tests
+```
+
+#### Bước 4.2: Observability & Alerting
+
+| Metric | Alert condition | Action |
+|--------|----------------|--------|
+| Glue job failed | failures ≥ 1 trong 5 phút | SNS → Slack → Engineer on-call |
+| Step Functions failed | failures ≥ 1 trong 5 phút | SNS → Slack → Engineer on-call |
+| Data Quality failed | Bất kỳ rule nào FAIL | SNS → Domain team owner |
+| Pipeline duration | > 30 phút (bình thường 10) | Investigate: data tăng? code chậm? |
+| No data arrived | 0 files in 24h (expected daily) | Check source system |
+
+#### Bước 4.3: Runbook (Quy trình xử lý sự cố)
+
+```
+Khi nhận alert "Pipeline FAILED":
+
+  1. Xem Step Functions console → step nào fail?
+  2. Xem CloudWatch Logs → error message cụ thể?
+  3. Phân loại:
+     a. Data issue (schema drift, bad data)
+        → Fix tại source, re-upload, pipeline tự chạy lại
+     b. Infrastructure issue (timeout, OOM)
+        → Tăng workers/memory, deploy qua CDK Pipeline
+     c. Code bug (logic sai)
+        → Fix code, commit, CDK Pipeline tự deploy
+        → Hoặc git revert nếu urgent
+
+  4. Post-mortem: Cập nhật DQ rules để bắt issue này sớm hơn lần sau
+```
+
+#### Bước 4.4: Continuous Improvement
+
+```
+Sprint 1-2 (MVP):
+  ✓ Batch pipeline: CSV → Iceberg → Athena
+  ✓ Basic monitoring + alerts
+
+Sprint 3-4:
+  ✓ Streaming pipeline (Kinesis)
+  ✓ Data Quality automation
+  ✓ Self-service onboarding
+
+Sprint 5-6:
+  ✓ Cost optimization (partition, scan limits)
+  ✓ Multi-environment CI/CD
+  ✓ Dashboard (QuickSight)
+
+Backlog (future):
+  □ Multi-account deployment (AWS Organizations)
+  □ DataZone catalog (business metadata)
+  □ ML feature store trên curated data
+  □ Real-time alerting (Kinesis → Lambda → SNS trực tiếp)
+  □ Data lineage tracking
+```
+
+---
+
+### Tóm tắt: Trả lời phỏng vấn theo framework
+
+Khi interviewer hỏi "Giải thích quá trình bạn xây dựng platform này", trả lời theo 4 phases:
+
+```
+"Đầu tiên tôi gather requirements từ stakeholders — phỏng vấn CEO,
+Marketing, Operations, Finance để hiểu pain points thực tế. Pain point
+lớn nhất là phải chờ 3-5 ngày để có 1 con số doanh thu, và mỗi team
+tính ra kết quả khác nhau.
+
+Sau đó tôi phân tích đặc điểm data theo 5V framework để chọn công nghệ:
+Volume moderate (200K records/tháng) → S3 + Glue (serverless, scale khi cần),
+Velocity cần cả batch và streaming → EventBridge + Kinesis,
+Variety nhiều format → Iceberg (schema evolution),
+Veracity có duplicates + invalid data → DQDL rules + dedup pipeline,
+Value cần self-service → Athena + QuickSight.
+
+Về data model, tôi chọn simplified star schema: giữ staging table
+(transaction-level, source of truth) và curated table (pre-aggregated,
+optimized cho queries). Không tách dimension tables riêng vì chỉ có
+5 categories + 4 regions — đơn giản hơn, query nhanh hơn trên Athena.
+
+Build theo IaC 100% với AWS CDK, tách 10 stacks theo blast radius,
+test-driven (unit tests trước, DQ rules = acceptance criteria),
+deploy qua CDK Pipelines self-mutating.
+
+Kết quả: thời gian từ data → insight giảm từ 3-5 ngày xuống 30 giây,
+engineer không còn bị interrupt cho ad-hoc queries, phát hiện data
+quality issues proactively thay vì khi user phàn nàn."
+```
+
+---
+
 ## Phiên bản ngắn (2-3 dòng, dùng trong CV)
 
 > **Modern Data Platform on AWS**

@@ -8,24 +8,24 @@
 
 ```
 ┌────────────────────────────────────────────────────────────────────────────┐
-│                 DATA PLATFORM DEVELOPMENT LIFECYCLE                          │
+│                 DATA PLATFORM DEVELOPMENT LIFECYCLE                        │
 ├────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
+│                                                                            │
 │  Phase 1          Phase 2           Phase 3          Phase 4               │
 │  DISCOVERY        DESIGN            BUILD            OPERATE               │
-│                                                                             │
-│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐            │
-│  │ Gather   │    │ Architect│    │ Implement│    │ Deploy & │            │
-│  │ Require- │───>│ & Model  │───>│ & Test   │───>│ Monitor  │            │
-│  │ ments    │    │          │    │          │    │          │            │
-│  └──────────┘    └──────────┘    └──────────┘    └──────────┘            │
-│                                                                             │
-│  • Stakeholder    • 5V analysis    • IaC (CDK)     • CI/CD pipeline       │
+│                                                                            │
+│  ┌──────────┐    ┌──────────┐    ┌──────────┐    ┌──────────┐              │
+│  │ Gather   │    │ Architect│    │ Implement│    │ Deploy & │              │
+│  │ Require- │───>│ & Model  │───>│ & Test   │───>│ Monitor  │              │
+│  │ ments    │    │          │    │          │    │          │              │
+│  └──────────┘    └──────────┘    └──────────┘    └──────────┘              │
+│                                                                            │
+│  • Stakeholder    • 5V analysis    • IaC (CDK)     • CI/CD pipeline        │
 │    interviews     • Tech selection • ETL code       • Observability        │
 │  • Pain points    • Data modeling  • DQ rules       • Incident response    │
 │  • SLA/NFR        • Architecture   • Unit tests     • Cost monitoring      │
 │  • Data audit     • Trade-offs     • Integration    • Iterate              │
-│                                                                             │
+│                                                                            │
 └────────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -79,8 +79,8 @@ Gặp từng team để hiểu pain points thực tế:
 ```
 Khảo sát: Dữ liệu nào đang có? Ở đâu? Format gì? Ai sở hữu?
 
-┌─────────────────────────────────────────────────────────────────────┐
-│ Data Source Inventory                                                │
+┌────────────────────────────────────────────────────────────────────┐
+│ Data Source Inventory                                              │
 ├──────────────┬───────────┬─────────────┬──────────┬────────────────┤
 │ Source       │ Format    │ Volume      │ Frequency│ Owner          │
 ├──────────────┼───────────┼─────────────┼──────────┼────────────────┤
@@ -146,25 +146,25 @@ when idle          VELOCITY: bursty         → On-demand (Glue, Kinesis, Athena
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    TARGET ARCHITECTURE                                │
+│                    TARGET ARCHITECTURE                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│                                                                      │
+│                                                                     │
 │  INGESTION        STORAGE         PROCESSING       SERVING          │
 │  ──────────      ─────────       ────────────     ────────          │
-│                                                                      │
-│  EventBridge ──> S3 Raw     ──>  Glue ETL    ──> Athena            │
-│  Lambda          (as-is)         (Stage A+B)      (SQL)            │
-│  Kinesis         S3 Staging      Step Functions   QuickSight       │
+│                                                                     │
+│  EventBridge ──> S3 Raw     ──>  Glue ETL    ──> Athena             │
+│  Lambda          (as-is)         (Stage A+B)      (SQL)             │
+│  Kinesis         S3 Staging      Step Functions   QuickSight        │
 │                  S3 Curated      (orchestrate)    (dashboard)       │
-│                  S3 Analytics                                        │
-│                                                                      │
+│                  S3 Analytics                                       │
+│                                                                     │
 │  GOVERNANCE       QUALITY          OBSERVABILITY    DEPLOYMENT      │
-│  ──────────      ─────────        ──────────────   ────────────    │
-│                                                                      │
-│  Lake Formation  DQDL Rules       CloudWatch       CDK Pipelines   │
-│  Glue Catalog    Alert Lambda     SNS Alerts       (self-mutating) │
-│  Macie (PII)                      Dashboard        3 environments  │
-│                                                                      │
+│  ──────────      ─────────        ──────────────   ────────────     │
+│                                                                     │
+│  Lake Formation  DQDL Rules       CloudWatch       CDK Pipelines    │
+│  Glue Catalog    Alert Lambda     SNS Alerts       (self-mutating)  │
+│  Macie (PII)                      Dashboard        3 environments   │
+│                                                                     │
 └─────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -210,13 +210,13 @@ Tư duy tách stacks:
 
   "Mỗi stack = 1 nhóm resources có lifecycle chung"
 
-  ┌────────────────────────────────────────────────────┐
+  ┌─────────────────────────────────────────────────────┐
   │ Stack decomposition logic:                          │
   │                                                     │
-  │ Q: Khi nào deploy cùng nhau?                       │
+  │ Q: Khi nào deploy cùng nhau?                        │
   │ A: S3 buckets + IAM role → STORAGE stack            │
   │                                                     │
-  │ Q: Ai depend vào ai?                               │
+  │ Q: Ai depend vào ai?                                │
   │ A: Transform cần Storage → Transform depends on     │
   │    Storage, nhưng Monitoring độc lập                │
   │                                                     │
@@ -225,9 +225,9 @@ Tư duy tách stacks:
   │    Domain team: Transform, DataQuality              │
   │                                                     │
   │ Q: Blast radius?                                    │
-  │ A: Sửa alarm không nên risk break S3 bucket        │
+  │ A: Sửa alarm không nên risk break S3 bucket         │
   │    → Tách Monitoring riêng                          │
-  └────────────────────────────────────────────────────┘
+  └─────────────────────────────────────────────────────┘
 
   Kết quả: 10 stacks, dependency graph rõ ràng
 ```
@@ -493,22 +493,22 @@ Thiết kế và triển khai Modern Data Platform theo các nguyên tắc:
 Mọi quyết định công nghệ trong platform đều xuất phát từ phân tích đặc điểm dữ liệu theo mô hình **5V of Big Data**:
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                         5V ANALYSIS → TECHNOLOGY DECISIONS                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐     │
-│  │ VOLUME  │   │VELOCITY │   │ VARIETY │   │VERACITY │   │  VALUE  │     │
-│  │ Khối    │   │ Tốc độ  │   │ Đa dạng │   │Độ tin   │   │ Giá trị │     │
-│  │ lượng   │   │         │   │         │   │ cậy     │   │         │     │
-│  └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘     │
-│       │              │              │              │              │          │
-│       ▼              ▼              ▼              ▼              ▼          │
-│   S3 + Glue     Kinesis +      Iceberg +     Data Quality   Athena +       │
-│   (scale to     EventBridge    Glue ETL      (DQDL rules)   QuickSight     │
-│    petabytes)   (real-time)    (any format)   (validate)    (self-service)  │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
+┌───────────────────────────────────────────────────────────────────────────┐
+│                         5V ANALYSIS → TECHNOLOGY DECISIONS                │
+├───────────────────────────────────────────────────────────────────────────┤
+│                                                                           │
+│  ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐   ┌─────────┐      │ 
+│  │ VOLUME  │   │VELOCITY │   │ VARIETY │   │VERACITY │   │  VALUE  │      │
+│  │ Khối    │   │ Tốc độ  │   │ Đa dạng │   │Độ tin   │   │ Giá trị │      │
+│  │ lượng   │   │         │   │         │   │ cậy     │   │         │      │
+│  └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘   └────┬────┘      │
+│       │             │             │             │             │           │
+│       ▼             ▼             ▼             ▼             ▼           │
+│   S3 + Glue     Kinesis +      Iceberg +     Data Quality   Athena +      │
+│   (scale to     EventBridge    Glue ETL      (DQDL rules)   QuickSight    │
+│    petabytes)   (real-time)    (any format)   (validate)    (self-service)│
+│                                                                           │
+└───────────────────────────────────────────────────────────────────────────┘
 ```
 
 #### ① VOLUME (Khối lượng) → Chọn S3 + Glue + Athena
@@ -618,8 +618,8 @@ Mọi quyết định công nghệ trong platform đều xuất phát từ phân
 ┌──────────────┬──────────────────────────────┬────────────────────────────────┐
 │      V       │     Thách thức cụ thể        │    Công nghệ đã chọn           │
 ├──────────────┼──────────────────────────────┼────────────────────────────────┤
-│ VOLUME       │ 200K+ records/tháng,         │ S3 (storage) + Glue (compute) │
-│              │ tăng 30% YoY, giữ 3 năm     │ + Athena (query)               │
+│ VOLUME       │ 200K+ records/tháng,         │ S3 (storage) + Glue (compute)  │
+│              │ tăng 30% YoY, giữ 3 năm     │ + Athena (query)                │
 ├──────────────┼──────────────────────────────┼────────────────────────────────┤
 │ VELOCITY     │ Batch hàng ngày +            │ EventBridge + Lambda (batch)   │
 │              │ streaming 3K events/giờ      │ + Kinesis (streaming)          │
@@ -628,7 +628,7 @@ Mọi quyết định công nghệ trong platform đều xuất phát từ phân
 │              │ schema thay đổi theo thời    │ + 4-zone lake architecture     │
 │              │ gian, nhiều domains          │ + Glue ETL (transform any)     │
 ├──────────────┼──────────────────────────────┼────────────────────────────────┤
-│ VERACITY     │ Duplicates, nulls, invalid   │ Glue DQ (DQDL rules)          │
+│ VERACITY     │ Duplicates, nulls, invalid   │ Glue DQ (DQDL rules)           │
 │              │ ranges, schema drift         │ + Stage A dedup/validate       │
 │              │                              │ + SNS alerts                   │
 ├──────────────┼──────────────────────────────┼────────────────────────────────┤
@@ -654,40 +654,40 @@ Mọi quyết định công nghệ trong platform đều xuất phát từ phân
 #### Quyết định: Star Schema đơn giản hoá (2 layers)
 
 ```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                    DATA MODEL ARCHITECTURE                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  STAGING LAYER (orders_staging)          CURATED LAYER (sales_summary)       │
-│  ─────────────────────────────          ──────────────────────────────      │
-│  = Transaction-level detail              = Pre-aggregated fact table          │
-│  = Source of truth (deduped)             = Optimized cho queries              │
-│                                                                              │
-│  ┌─────────────────────────┐            ┌─────────────────────────────┐     │
-│  │  orders_staging         │            │  sales_summary              │     │
-│  │  (Iceberg table)        │            │  (Iceberg table)            │     │
-│  ├─────────────────────────┤            ├─────────────────────────────┤     │
+┌────────────────────────────────────────────────────────────────────────────┐
+│                    DATA MODEL ARCHITECTURE                                 │
+├────────────────────────────────────────────────────────────────────────────┤
+│                                                                            │
+│  STAGING LAYER (orders_staging)          CURATED LAYER (sales_summary)     │
+│  ─────────────────────────────          ──────────────────────────────     │
+│  = Transaction-level detail              = Pre-aggregated fact table       │
+│  = Source of truth (deduped)             = Optimized cho queries           │
+│                                                                            │
+│  ┌─────────────────────────┐            ┌────────────────────────────┐     │
+│  │  orders_staging         │            │  sales_summary             │     │
+│  │  (Iceberg table)        │            │  (Iceberg table)           │     │
+│  ├─────────────────────────┤            ├────────────────────────────┤     │
 │  │  order_id        PK     │            │  order_date         PK(1)  │     │
 │  │  order_date             │──────┐     │  category           PK(2)  │     │
 │  │  customer_id            │      │     │  region             PK(3)  │     │
-│  │  category               │      │     ├─────────────────────────────┤     │
+│  │  category               │      │     ├────────────────────────────┤     │
 │  │  product_name           │      │     │  order_count        metric │     │
 │  │  quantity               │      ├────>│  total_quantity     metric │     │
 │  │  unit_price             │      │     │  total_revenue      metric │     │
 │  │  total_amount           │      │     │  avg_order_value    metric │     │
 │  │  region                 │      │     │  unique_customers   metric │     │
 │  │  payment_method         │      │     │  cumulative_revenue metric │     │
-│  │  ingested_at            │      │     ├─────────────────────────────┤     │
+│  │  ingested_at            │      │     ├────────────────────────────┤     │
 │  └─────────────────────────┘      │     │  year               part.  │     │
-│                                    │     │  month              part.  │     │
-│                                    │     │  processed_at       audit  │     │
-│                 Stage B            │     └─────────────────────────────┘     │
-│               (GROUP BY +          │                                         │
-│                window func)        │     Partition: year(order_date)         │
-│                                    │     Granularity: 1 row per              │
-│                                    │       (date × category × region)       │
-│                                    │                                         │
-└────────────────────────────────────┴─────────────────────────────────────────┘
+│                                   │     │  month              part.  │     │
+│                                   │     │  processed_at       audit  │     │
+│                 Stage B           │     └────────────────────────────┘     │
+│               (GROUP BY +         │                                        │
+│                window func)       │     Partition: year(order_date)        │
+│                                   │     Granularity: 1 row per             │
+│                                   │       (date × category × region)       │
+│                                   │                                        │
+└───────────────────────────────────┴────────────────────────────────────────┘
 ```
 
 #### Tại sao chọn model này?
@@ -909,28 +909,28 @@ Một công ty e-commerce đang tăng trưởng nhanh:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    TRƯỚC KHI CÓ PLATFORM                                     │
+│                    TRƯỚC KHI CÓ PLATFORM                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
+│                                                                             │
 │  CEO hỏi: "Doanh thu tuần này so với tuần trước thế nào?"                   │
 │    → Data Analyst: "Để tôi export từ database, chạy Excel... 2-3 ngày"      │
-│                                                                              │
+│                                                                             │
 │  Marketing hỏi: "Category nào đang trending để chạy campaign?"              │
-│    → Engineer: "Để tôi viết query... à mà data format khác rồi, 1 tuần"    │
-│                                                                              │
-│  Operations hỏi: "Khu vực nào đang giảm đơn hàng?"                         │
+│    → Engineer: "Để tôi viết query... à mà data format khác rồi, 1 tuần"     │
+│                                                                             │
+│  Operations hỏi: "Khu vực nào đang giảm đơn hàng?"                          │
 │    → "Không ai biết cho đến khi báo cáo cuối tháng"                         │
-│                                                                              │
+│                                                                             │
 │  Finance hỏi: "Tổng revenue Q3 chia theo payment method?"                   │
-│    → "Export 3 file từ 3 hệ thống, merge thủ công, sai số ±5%"             │
-│                                                                              │
-│  ❌ 3-5 ngày để có 1 con số                                                 │
-│  ❌ Mỗi lần hỏi lại phải làm lại từ đầu                                    │
-│  ❌ Không ai tin số liệu vì mỗi team tính khác nhau                        │
-│  ❌ Engineer mất 60% thời gian chạy query ad-hoc thay vì build product     │
-│                                                                              │
+│    → "Export 3 file từ 3 hệ thống, merge thủ công, sai số ±5%"              │
+│                                                                             │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
-```
+  ❌ 3-5 ngày để có 1 con số                                                 
+  ❌ Mỗi lần hỏi lại phải làm lại từ đầu                                     
+  ❌ Không ai tin số liệu vì mỗi team tính khác nhau                         
+  ❌ Engineer mất 60% thời gian chạy query ad-hoc thay vì build product
+````
 
 ### 7 câu hỏi kinh doanh mà platform trả lời
 
@@ -948,92 +948,92 @@ Một công ty e-commerce đang tăng trưởng nhanh:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                    SAU KHI CÓ PLATFORM                                        │
+│                    SAU KHI CÓ PLATFORM                                      │
 ├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
+│                                                                             │
 │  ┌─────────────┐     orders.csv (hàng ngày từ source system)                │
 │  │ Source      │     Mỗi record:                                            │
 │  │ System      │       order_id, order_date, customer_id, category,         │
 │  │ (POS/Web)   │       product_name, quantity, unit_price, total_amount,    │
 │  └──────┬──────┘       region, payment_method                               │
-│         │                                                                    │
+│         │                                                                   │
 │         │ Upload tự động vào S3 raw (hoặc manual lần đầu)                   │
-│         ▼                                                                    │
+│         ▼                                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │ STAGE A: Validation & Ingestion (~3 phút)                           │    │
-│  │                                                                      │    │
+│  │                                                                     │    │
 │  │  ① Đọc CSV với schema enforcement                                   │    │
-│  │     → Đảm bảo đúng 10 cột, đúng kiểu dữ liệu                      │    │
+│  │     → Đảm bảo đúng 10 cột, đúng kiểu dữ liệu                        │    │
 │  │     → Reject records thiếu order_id (không thể track)               │    │
-│  │                                                                      │    │
+│  │                                                                     |    │
 │  │  ② Dedup theo order_id                                              │    │
-│  │     → Loại đơn hàng bị gửi trùng (do retry, network issue)         │    │
-│  │     → Tránh đếm doanh thu 2 lần cho cùng 1 đơn                     │    │
-│  │                                                                      │    │
+│  │     → Loại đơn hàng bị gửi trùng (do retry, network issue)          │    │
+│  │     → Tránh đếm doanh thu 2 lần cho cùng 1 đơn                      │    │
+│  │                                                                     │    │
 │  │  ③ Thêm metadata: ingested_at                                       │    │
 │  │     → Biết data này được nạp khi nào (debug, audit)                 │    │
-│  │                                                                      │    │
+│  │                                                                     │    │
 │  │  ④ Ghi ra Iceberg table "orders_staging"                            │    │
 │  │     → Format chuẩn, có version history, query được ngay             │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
-│         │                                                                    │
-│         ▼                                                                    │
+│         │                                                                   │
+│         ▼                                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │ DATA QUALITY CHECK                                                   │    │
-│  │                                                                      │    │
+│  │ DATA QUALITY CHECK                                                  │    │
+│  │                                                                     │    │
 │  │  ✓ ColumnValues "total_amount" > 0  (không cho đơn âm/zero)         │    │
 │  │  ✓ ColumnValues "quantity" between 1 and 10000  (range hợp lý)      │    │
 │  │  ✓ IsUnique "order_id"  (confirm dedup thành công)                  │    │
-│  │  ✓ Completeness "total_amount" >= 0.95  (≤5% null chấp nhận được)  │    │
+│  │  ✓ Completeness "total_amount" >= 0.95  (≤5% null chấp nhận được)   │    │
 │  │  ✓ ColumnValues "category" in [5 categories]  (không có junk)       │    │
-│  │  ✓ ColumnValues "region" in [4 regions]  (mapping đúng)            │    │
-│  │                                                                      │    │
-│  │  Nếu FAIL → SNS alert → Team biết ngay data source có vấn đề       │    │
+│  │  ✓ ColumnValues "region" in [4 regions]  (mapping đúng)             │    │
+│  │                                                                     │    │
+│  │  Nếu FAIL → SNS alert → Team biết ngay data source có vấn đề        │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
-│         │                                                                    │
-│         ▼                                                                    │
+│         │                                                                   │
+│         ▼                                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │ STAGE B: Business Aggregation (~5 phút)                             │    │
-│  │                                                                      │    │
+│  │                                                                     │    │
 │  │  ① GROUP BY (order_date, category, region)                          │    │
-│  │     → Từ 200K đơn hàng → ~6000 summary records/tháng               │    │
-│  │     → Query nhanh gấp 30x (scan ít data hơn)                       │    │
-│  │                                                                      │    │
+│  │     → Từ 200K đơn hàng → ~6000 summary records/tháng                │    │
+│  │     → Query nhanh gấp 30x (scan ít data hơn)                        │    │
+│  │                                                                     │    │
 │  │  ② Tính metrics nghiệp vụ:                                          │    │
 │  │     • order_count: số đơn hàng                                      │    │
 │  │     • total_quantity: tổng số lượng sản phẩm                        │    │
 │  │     • total_revenue: tổng doanh thu                                 │    │
 │  │     • avg_order_value: giá trị đơn trung bình                       │    │
 │  │     • unique_customers: số khách hàng unique                        │    │
-│  │                                                                      │    │
+│  │                                                                     │    │
 │  │  ③ Tính cumulative_revenue (running total theo category+region)     │    │
 │  │     → Investors xem growth trajectory không cần tính thêm           │    │
-│  │                                                                      │    │
-│  │  ④ Partition theo year(order_date)                                   │    │
-│  │     → Query "doanh thu tháng 8" chỉ scan data tháng 8              │    │
-│  │     → Tiết kiệm 90% Athena scan cost                               │    │
+│  │                                                                     │    │
+│  │  ④ Partition theo year(order_date)                                  │    │
+│  │     → Query "doanh thu tháng 8" chỉ scan data tháng 8               │    │
+│  │     → Tiết kiệm 90% Athena scan cost                                │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
-│         │                                                                    │
-│         ▼                                                                    │
+│         │                                                                   │
+│         ▼                                                                   │
 │  ┌─────────────────────────────────────────────────────────────────────┐    │
 │  │ ANALYTICS: Athena Views (query ngay, không cần code)                │    │
-│  │                                                                      │    │
-│  │  • daily_revenue:                                                    │    │
+│  │                                                                     │    │
+│  │  • daily_revenue:                                                   │    │
 │  │      "Doanh thu mỗi ngày, breakdown theo category"                  │    │
-│  │                                                                      │    │
-│  │  • monthly_category_performance:                                     │    │
+│  │                                                                     │    │
+│  │  • monthly_category_performance:                                    │    │
 │  │      "So sánh categories theo tháng, tính MoM growth %"             │    │
-│  │                                                                      │    │
-│  │  • regional_performance:                                             │    │
-│  │      "Revenue + order count + AOV theo khu vực"                      │    │
-│  │                                                                      │    │
-│  │  • top_categories:                                                   │    │
-│  │      "Top 5 categories theo revenue, sorted descending"              │    │
-│  │                                                                      │    │
-│  │  CEO/Marketing/Finance: Mở Athena → chọn view → có kết quả         │    │
+│  │                                                                     │    │
+│  │  • regional_performance:                                            │    │
+│  │      "Revenue + order count + AOV theo khu vực"                     │    │
+│  │                                                                     │    │
+│  │  • top_categories:                                                  │    │
+│  │      "Top 5 categories theo revenue, sorted descending"             │    │
+│  │                                                                     │    │
+│  │  CEO/Marketing/Finance: Mở Athena → chọn view → có kết quả          │    │
 │  │  QuickSight: Connect Athena → Dashboard tự refresh hàng ngày        │    │
 │  └─────────────────────────────────────────────────────────────────────┘    │
-│                                                                              │
+│                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
